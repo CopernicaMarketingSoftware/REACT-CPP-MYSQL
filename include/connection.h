@@ -16,27 +16,49 @@ namespace React { namespace MySQL {
  */
 class Connection
 {
+private:
+    /**
+     *  Connection to mysql
+     */
+    MYSQL *_connection;
+
+    /**
+     *  The worker operating on MySQL
+     */
+    Worker _worker;
+
+    /**
+     *  Worker for main thread
+     */
+    Worker _master;
 public:
     /**
      *  Establish a connection to mysql
      *
+     *  @param  loop        the loop to bind to
      *  @param  hostname    the hostname to connect to
      *  @param  username    the username to login with
      *  @param  password    the password to authenticate with
      *  @param  database    the database to use
      */
-    Connection(const std::string& hostname, const std::string &username, const std::string& password, const std::string& database);
+    Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database);
 
     /**
      *  Establish a connection to mysql
      *
+     *  @param  loop        the loop to bind to
      *  @param  hostname    the hostname to connect to
      *  @param  username    the username to login with
      *  @param  password    the password to authenticate with
      *  @param  database    the database to use
      *  @param  callback    the callback to inform once the connection is established or failed
      */
-    Connection(const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, const std::function<void(Connection *connection, const char *error)>& callback);
+    Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, const std::function<void(Connection *connection, const char *error)>& callback);
+
+    /**
+     *  Destructor
+     */
+    virtual ~Connection();
 };
 
 /**

@@ -19,6 +19,7 @@
 /**
  *  Other include files
  */
+#include <mysqlcpp/result.h>
 #include <mysqlcpp/connection.h>
 
 /**

@@ -15,10 +15,13 @@
 #include <variant.h>
 #include <mysql.h>
 #include <functional>
+#include <memory>
 
 /**
  *  Other include files
  */
+#include <mysqlcpp/exception.h>
+#include <mysqlcpp/resultrow.h>
 #include <mysqlcpp/result.h>
 #include <mysqlcpp/connection.h>
 

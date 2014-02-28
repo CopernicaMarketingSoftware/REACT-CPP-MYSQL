@@ -17,5 +17,8 @@
 /**
  *  Include other files from this library
  */
+#include "../include/exception.h"
+#include "../include/resultrow.h"
+#include "resultimpl.h"
 #include "../include/result.h"
 #include "../include/connection.h"

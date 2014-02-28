@@ -20,14 +20,14 @@ class ResultImpl;
 class ResultRow
 {
     /**
-     *  The result set
+     *  Map of field names to their field
      */
-    std::shared_ptr<ResultImpl> _result;
+    std::map<std::string, ResultField> _namedFields;
 
     /**
-     *  The field data
+     *  List of fields without name
      */
-    MYSQL_ROW _fields;
+    std::vector<ResultField> _indexedFields;
 public:
     /**
      *  Construct the row
@@ -40,7 +40,7 @@ public:
     /**
      *  Get the number of fields in the row
      */
-    size_t size();
+    size_t size() const;
 
     /**
      *  Retrieve a field by index
@@ -51,7 +51,7 @@ public:
      *
      *  @param  index   field index
      */
-    std::string operator [] (size_t index) const;
+    const ResultField& operator [] (size_t index) const;
 
     /**
      *  Retrieve a field by name
@@ -61,7 +61,22 @@ public:
      *
      *  @param  key     field name
      */
-    std::string operator [] (const std::string& key) const;
+    const ResultField& operator [] (const std::string& key) const;
+
+    /**
+     *  Get iterator for first field
+     */
+    std::map<std::string, ResultField>::const_iterator begin() const;
+
+    /**
+     *  Get iterator for field by the given name
+     */
+    std::map<std::string, ResultField>::const_iterator find(const std::string& key) const;
+
+    /**
+     *  Get the iterator past the end
+     */
+    std::map<std::string, ResultField>::const_iterator end() const;
 };
 
 /**

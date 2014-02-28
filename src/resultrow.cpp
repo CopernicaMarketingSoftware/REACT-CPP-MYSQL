@@ -19,17 +19,23 @@ namespace React { namespace MySQL {
  *  @param  result  the result object with all the rows
  *  @param  fields  the fields for this row
  */
-ResultRow::ResultRow(std::shared_ptr<ResultImpl> result, MYSQL_ROW fields) :
-    _result(result),
-    _fields(fields)
-{}
+ResultRow::ResultRow(std::shared_ptr<ResultImpl> result, MYSQL_ROW fields)
+{
+    // initialize all fields
+    for (auto iter = result->fields().begin(); iter != result->fields().end(); iter++)
+    {
+        // add to named fields and indexed fields
+        _namedFields.insert(std::make_pair(iter->first, ResultField(result, fields[iter->second])));
+        _indexedFields.push_back(ResultField(result, fields[iter->second]));
+    }
+}
 
 /**
  *  Get the number of fields in the row
  */
-size_t ResultRow::size()
+size_t ResultRow::size() const
 {
-    return _result->fields().size();
+    return _indexedFields.size();
 }
 
 /**
@@ -41,13 +47,13 @@ size_t ResultRow::size()
  *
  *  @param  index   field index
  */
-std::string ResultRow::operator [] (size_t index) const
+const ResultField& ResultRow::operator [] (size_t index) const
 {
     // check whether the given field exists
     if (index >= size()) throw Exception("Invalid field index");
 
     // construct string and return
-    return std::string(_fields[index]);
+    return _indexedFields[index];
 }
 
 /**
@@ -58,16 +64,40 @@ std::string ResultRow::operator [] (size_t index) const
  *
  *  @param  key     field name
  */
-std::string ResultRow::operator [] (const std::string& key) const
+const ResultField& ResultRow::operator [] (const std::string& key) const
 {
     // find field in the list
-    auto iter = _result->fields().find(key);
+    auto iter = _namedFields.find(key);
 
     // check whether it exists
-    if (iter == _result->fields().end()) throw Exception("Invalid field name");
+    if (iter == _namedFields.end()) throw Exception("Invalid field name");
 
-    // now retrieve the field by the corresponding index
-    return operator [] (iter->second);
+    // return the field
+    return iter->second;
+}
+
+/**
+ *  Get iterator for first field
+ */
+std::map<std::string, ResultField>::const_iterator ResultRow::begin() const
+{
+    return _namedFields.begin();
+}
+
+/**
+ *  Get iterator for field by the given name
+ */
+std::map<std::string, ResultField>::const_iterator ResultRow::find(const std::string& key) const
+{
+    return _namedFields.find(key);
+}
+
+/**
+ *  Get the iterator past the end
+ */
+std::map<std::string, ResultField>::const_iterator ResultRow::end() const
+{
+    return _namedFields.end();
 }
 
 /**

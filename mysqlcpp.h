@@ -21,6 +21,7 @@
  *  Other include files
  */
 #include <mysqlcpp/exception.h>
+#include <mysqlcpp/resultfield.h>
 #include <mysqlcpp/resultrow.h>
 #include <mysqlcpp/result.h>
 #include <mysqlcpp/connection.h>

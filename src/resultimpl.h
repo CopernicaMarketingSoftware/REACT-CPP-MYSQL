@@ -29,6 +29,11 @@ private:
     std::map<std::string, size_t> _fields;
 
     /**
+     *  The current position in the result set
+     */
+    size_t _position;
+
+    /**
      *  The number of rows
      */
     size_t _size;
@@ -39,7 +44,8 @@ public:
      *  @param  result  mysql result
      */
     ResultImpl(MYSQL_RES *result) :
-        _result(result)
+        _result(result),
+        _position(0)
     {
         // retrieve number of fields
         auto size = mysql_num_fields(_result);
@@ -70,7 +76,7 @@ public:
     /**
      *  Get the fields and their index
      */
-    const std::map<std::string, size_t> fields()
+    const std::map<std::string, size_t>& fields() const
     {
         return _fields;
     }
@@ -78,7 +84,7 @@ public:
     /**
      *  Get the number of rows in this result set
      */
-    size_t size()
+    size_t size() const
     {
         return _size;
     }
@@ -98,6 +104,17 @@ public:
         // check whether the index is valid
         if (index > size()) throw Exception("Invalid result offset");
 
+        // are we already at the required offset?
+        if (_position == index) return;
+
+        /**
+         *  TODO:   Optimize this for bigger result sets.
+         *          We could, for example, store the result
+         *          of mysql_row_tell every 1000 rows, so
+         *          we never have to travel through thousands
+         *          of rows to get where we want to.
+         */
+
         // seek to the desired offset
         mysql_data_seek(_result, index);
     }
@@ -107,6 +124,10 @@ public:
      */
     MYSQL_ROW fetch()
     {
+        // we just moved to the next row
+        _position++;
+
+        // return the next row
         return mysql_fetch_row(_result);
     }
 };

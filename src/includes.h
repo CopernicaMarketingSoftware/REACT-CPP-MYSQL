@@ -18,6 +18,7 @@
  *  Include other files from this library
  */
 #include "../include/exception.h"
+#include "../include/resultfield.h"
 #include "../include/resultrow.h"
 #include "resultimpl.h"
 #include "../include/result.h"

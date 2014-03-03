@@ -90,3 +90,66 @@ int main()
     return 0;
 }
 ```
+
+Both the result set and the individual rows can be iterated (as shown in the example above) or simply used
+as an array. The rows can only be accessed with a numerical index, while the fields can be accessed using
+their field index as well as their name:
+
+```c++
+connection.query("SELECT a, b, c FROM test", [](React::MySQL::Result&& result, const char *error) {
+    // assume error handling has been done
+
+    // loop over the rows by their index
+    for (size_t i = 0; i < result.size(); ++i)
+    {
+        // retrieve the row
+        auto row = result[i];
+
+        // the individual fields can be accessed by name or by index
+        // e.g.: the field 'b', can be accessed by index 1 or 'b':
+        auto field = row[1];
+        auto sameField = row["b"];
+
+        // fields can be casted to a string, or any of the numeric types
+        // assuming that 'a' holds a unsigned bigint
+        unsigned long a = row["a"];
+    }
+
+    /**
+     *  It is, of course, also possible to take individual rows
+     *  from the result set in any order.
+     *
+     *  Note that this can be extremely slow when working with
+     *  larger result sets. Sequential access is the fastest
+     *  way to step through the results.
+     */
+    auto row = result[17];
+});
+```
+
+For convenience, all functions can be called without their corresponding callback. This could be useful
+for non-critical operations, like truncating a log table:
+
+```c
+#include <reactcpp/mysql.h>
+#include <iostream>
+#include <cassert>
+
+/**
+ *  Main application procedure
+ */
+int main()
+{
+    // create an event loop
+    React::MainLoop loop;
+
+    // create the connection to MySQL and clean out the logs
+    React::MySQL::Connection connection(&loop, "mysql.example.org", "example user", "example password", "example database");
+    connection.query("TRUNCATE logs");
+
+    // run the event loop
+    loop.run();
+
+    // done
+    return 0;
+```

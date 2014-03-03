@@ -40,8 +40,9 @@ public:
      *  @param  username    the username to login with
      *  @param  password    the password to authenticate with
      *  @param  database    the database to use
+     *  @param  flags       connection flags
      */
-    Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database);
+    Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, uint64_t flags = CLIENT_IGNORE_SIGPIPE | CLIENT_MULTI_STATEMENTS);
 
     /**
      *  Establish a connection to mysql
@@ -53,7 +54,7 @@ public:
      *  @param  database    the database to use
      *  @param  callback    the callback to inform once the connection is established or failed
      */
-    Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, const std::function<void(Connection *connection, const char *error)>& callback);
+    Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, const std::function<void(Connection *connection, const char *error)>& callback, uint64_t flags = CLIENT_IGNORE_SIGPIPE | CLIENT_MULTI_STATEMENTS);
 
     /**
      *  Destructor

@@ -22,18 +22,18 @@ namespace React { namespace MySQL {
  *  @param  password    the password to authenticate with
  *  @param  database    the database to use
  */
-Connection::Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database) :
+Connection::Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, uint64_t flags) :
     _connection(nullptr),
     _worker(loop),
     _master()
 {
     // establish the connection in the worker thread
-    _worker.execute([this, hostname, username, password, database]() {
+    _worker.execute([this, hostname, username, password, database, flags]() {
         // initialize connection object
         if ((_connection = mysql_init(nullptr)) == nullptr) return;
 
         // connect to mysql
-        if (mysql_real_connect(_connection, hostname.c_str(), username.c_str(), password.c_str(), database.c_str(), 0, nullptr, CLIENT_IGNORE_SIGPIPE | CLIENT_MULTI_STATEMENTS) == nullptr) return;
+        if (mysql_real_connect(_connection, hostname.c_str(), username.c_str(), password.c_str(), database.c_str(), 0, nullptr, flags) == nullptr) return;
     });
 }
 
@@ -47,13 +47,13 @@ Connection::Connection(Loop *loop, const std::string& hostname, const std::strin
  *  @param  database    the database to use
  *  @param  callback    the callback to inform once the connection is established or failed
  */
-Connection::Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, const std::function<void(Connection *connection, const char *error)>& callback) :
+Connection::Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, const std::function<void(Connection *connection, const char *error)>& callback, uint64_t flags) :
     _connection(nullptr),
     _worker(loop),
     _master()
 {
     // establish the connection in the worker thread
-    _worker.execute([this, hostname, username, password, database, callback]() {
+    _worker.execute([this, hostname, username, password, database, callback, flags]() {
         // initialize connection object
         if ((_connection = mysql_init(nullptr)) == nullptr)
         {
@@ -63,7 +63,7 @@ Connection::Connection(Loop *loop, const std::string& hostname, const std::strin
         }
 
         // connect to mysql
-        if (mysql_real_connect(_connection, hostname.c_str(), username.c_str(), password.c_str(), database.c_str(), 0, nullptr, CLIENT_IGNORE_SIGPIPE | CLIENT_MULTI_STATEMENTS) == nullptr)
+        if (mysql_real_connect(_connection, hostname.c_str(), username.c_str(), password.c_str(), database.c_str(), 0, nullptr, flags) == nullptr)
         {
             // could not connect to mysql
             _master.execute([this, callback]() { callback(this, mysql_error(_connection)); });

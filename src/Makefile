@@ -3,7 +3,7 @@ RM		= rm -f
 CPPFLAGS	= -Wall -c -I. -O2 -flto -std=c++11 -g
 LD		= g++
 LD_FLAGS	= -Wall -shared -O2
-SHARED_LIB	= libmysqlcpp.so
+SHARED_LIB	= libreactcpp-mysql.so
 STATIC_LIB	= $(SHARED_LIB:%.so=%.a)
 SOURCES		= $(wildcard *.cpp */*.cpp)
 SHARED_OBJECTS	= $(SOURCES:%.cpp=%.o)

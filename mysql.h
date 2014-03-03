@@ -20,11 +20,11 @@
 /**
  *  Other include files
  */
-#include <mysqlcpp/exception.h>
-#include <mysqlcpp/resultfield.h>
-#include <mysqlcpp/resultrow.h>
-#include <mysqlcpp/result.h>
-#include <mysqlcpp/connection.h>
+#include <reactcpp/mysql/exception.h>
+#include <reactcpp/mysql/resultfield.h>
+#include <reactcpp/mysql/resultrow.h>
+#include <reactcpp/mysql/result.h>
+#include <reactcpp/mysql/connection.h>
 
 /**
  *  End if

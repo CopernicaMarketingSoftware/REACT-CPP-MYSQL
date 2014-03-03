@@ -37,6 +37,7 @@ private:
      *  The number of rows
      */
     size_t _size;
+
 public:
     /**
      *  Construct result implementation
@@ -114,6 +115,9 @@ public:
          *          we never have to travel through thousands
          *          of rows to get where we want to.
          */
+
+        // remember the new position
+        _position = index;
 
         // seek to the desired offset
         mysql_data_seek(_result, index);

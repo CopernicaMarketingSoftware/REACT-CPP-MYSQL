@@ -23,7 +23,89 @@ class Result
      *  The result from MySQL
      */
     std::shared_ptr<ResultImpl> _result;
+
 public:
+    /**
+     *  Result iterator
+     */
+    class iterator
+    {
+    private:
+        /**
+         *  The result from MySQL
+         */
+        std::shared_ptr<ResultImpl> _result;
+
+        /**
+         *  The index we are at
+         */
+        size_t _index;
+
+        /**
+         *  Is this iterator pointing to a valid position?
+         */
+        bool valid() const;
+    public:
+        /**
+         *  Empty constructor
+         */
+        iterator();
+
+        /**
+         *  Constructor
+         *
+         *  @param  result  mysql result set
+         *  @param  index   index to start from
+         */
+        iterator(std::shared_ptr<ResultImpl> result, size_t index);
+
+        /**
+         *  Copy constructor
+         *
+         *  @param  that    iterator to copy
+         */
+        iterator(const iterator& that);
+
+        /**
+         *  Assign another iterator
+         */
+        iterator& operator=(const iterator& that);
+
+        /**
+         *  Increment operator
+         */
+        iterator& operator++();
+
+        /**
+         *  Increment operator (postfix)
+         */
+        iterator operator++(int);
+
+        /**
+         *  Compare with other iterator
+         *
+         *  @param  that    iterator to compare with
+         */
+        bool operator==(const iterator& that);
+
+        /**
+         *  Compare with otehr iterator
+         *
+         *  @param  that    iterator to compare with
+         */
+        bool operator!=(const iterator& that);
+
+        /**
+         *  Dereference
+         */
+        ResultRow operator*();
+
+        /**
+         *  Call method on dereferenced row
+         */
+        std::unique_ptr<ResultRow> operator->();
+    };
+
     /**
      *  Constructor
      */
@@ -47,17 +129,17 @@ public:
     /**
      *  Destructor
      */
-    ~Result();
+    virtual ~Result();
 
     /**
      *  Is this a valid result?
      */
-    bool valid();
+    bool valid() const;
 
     /**
      *  Get the number of rows in this result
      */
-    size_t size();
+    size_t size() const;
 
     /**
      *  Retrieve a row at the given offset
@@ -70,6 +152,16 @@ public:
      *  @throws Exception
      */
     ResultRow operator [] (size_t index);
+
+    /**
+     *  Retrieve iterator for first row
+     */
+    iterator begin() const;
+
+    /**
+     *  Retrieve iterator past the end
+     */
+    iterator end() const;
 };
 
 /**

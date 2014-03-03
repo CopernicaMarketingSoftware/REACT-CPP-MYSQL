@@ -107,6 +107,7 @@ void Connection::query(const std::string& query, const std::function<void(Result
         {
             // retrieve result set
             auto *result = mysql_store_result(_connection);
+            size_t affectedRows = mysql_affected_rows(_connection);
 
             // did we get a valid response?
             if (result)
@@ -118,6 +119,11 @@ void Connection::query(const std::string& query, const std::function<void(Result
             {
                 // the query *should* have returned a result, this is an error
                 _master.execute([this, callback]() { callback(Result(nullptr), mysql_error(_connection)); });
+            }
+            else
+            {
+                // this is a query without a result set (i.e.: update, insert or delete)
+                _master.execute([this, callback, affectedRows]() { callback(Result(affectedRows), nullptr); });
             }
 
             // check whether there are more results

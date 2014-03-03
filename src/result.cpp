@@ -17,14 +17,24 @@ namespace React { namespace MySQL {
  *  Constructor
  */
 Result::Result(MYSQL_RES *result) :
-    _result(std::make_shared<ResultImpl>(result))
+    _result(std::make_shared<ResultImpl>(result)),
+    _affectedRows(0)
+{}
+
+/**
+ *  Constructor for affected rows
+ */
+Result::Result(size_t affectedRows) :
+    _result(nullptr),
+    _affectedRows(affectedRows)
 {}
 
 /**
  *  Invalid constructor
  */
 Result::Result(std::nullptr_t result) :
-    _result(nullptr)
+    _result(nullptr),
+    _affectedRows(0)
 {}
 
 /**
@@ -171,7 +181,15 @@ std::unique_ptr<ResultRow> Result::iterator::operator->()
  */
 bool Result::valid() const
 {
-    return _result.get() != nullptr;
+    return _affectedRows || _result;
+}
+
+/**
+ *  The number of affected rows
+ */
+size_t Result::affectedRows() const
+{
+    return _affectedRows;
 }
 
 /**
@@ -179,7 +197,7 @@ bool Result::valid() const
  */
 size_t Result::size() const
 {
-    return valid() ? _result->size() : 0;
+    return _result ? _result->size() : 0;
 }
 
 /**
@@ -196,7 +214,7 @@ size_t Result::size() const
 ResultRow Result::operator [] (size_t index)
 {
     // check whether we are valid
-    if (!valid()) throw Exception("Invalid result object");
+    if (!_result) throw Exception("Invalid result object");
 
     // seek to requested index
     _result->seek(index);

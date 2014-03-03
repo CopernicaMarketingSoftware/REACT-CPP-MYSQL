@@ -24,6 +24,11 @@ class Result
      */
     std::shared_ptr<ResultImpl> _result;
 
+    /**
+     *  Number of affected rows
+     */
+    size_t _affectedRows;
+
 public:
     /**
      *  Result iterator
@@ -112,6 +117,11 @@ public:
     Result(MYSQL_RES *result);
 
     /**
+     *  Constructor for affected rows
+     */
+    Result(size_t affectedRows);
+
+    /**
      *  Invalid constructor
      */
     Result(std::nullptr_t result);
@@ -135,6 +145,11 @@ public:
      *  Is this a valid result?
      */
     bool valid() const;
+
+    /**
+     *  The number of rows affected
+     */
+    size_t affectedRows() const;
 
     /**
      *  Get the number of rows in this result

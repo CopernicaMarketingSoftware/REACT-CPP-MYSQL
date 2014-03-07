@@ -14,6 +14,7 @@ namespace React { namespace MySQL {
 
 // forward declaration
 class ResultImpl;
+class StatementResultField;
 
 /**
  *  Result field
@@ -30,6 +31,11 @@ private:
      *  The field data
      */
     const char *_data;
+
+    /**
+     *  The field implementation
+     */
+    StatementResultField *_field;
 public:
     /**
      *  Constructor
@@ -38,6 +44,14 @@ public:
      *  @param  data    the field data
      */
     ResultField(std::shared_ptr<ResultImpl> result, const char *data);
+
+    /**
+     *  Constructor
+     *
+     *  @param  result  the result implementation
+     *  @param  field   the field implementation
+     */
+    ResultField(std::shared_ptr<ResultImpl> result, StatementResultField *field);
 
     /**
      *  Get whether this field is NULL

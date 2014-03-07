@@ -16,6 +16,8 @@
 #include <mysql.h>
 #include <functional>
 #include <memory>
+#include <cstdlib>
+#include <cstring>
 
 /**
  *  Other include files
@@ -24,7 +26,9 @@
 #include <reactcpp/mysql/resultfield.h>
 #include <reactcpp/mysql/resultrow.h>
 #include <reactcpp/mysql/result.h>
+#include <reactcpp/mysql/parameter.h>
 #include <reactcpp/mysql/connection.h>
+#include <reactcpp/mysql/statement.h>
 
 /**
  *  End if

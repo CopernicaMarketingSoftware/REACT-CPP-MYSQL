@@ -17,7 +17,15 @@ namespace React { namespace MySQL {
  *  Constructor
  */
 Result::Result(MYSQL_RES *result) :
-    _result(std::make_shared<ResultImpl>(result)),
+    _result(std::make_shared<QueryResultImpl>(result)),
+    _affectedRows(0)
+{}
+
+/**
+ *  Constructor
+ */
+Result::Result(std::shared_ptr<ResultImpl>&& implementation) :
+    _result(std::move(implementation)),
     _affectedRows(0)
 {}
 
@@ -26,7 +34,7 @@ Result::Result(MYSQL_RES *result) :
  */
 Result::Result(size_t affectedRows) :
     _result(nullptr),
-    _affectedRows(affectedRows)
+    _affectedRows(0)
 {}
 
 /**
@@ -41,7 +49,8 @@ Result::Result(std::nullptr_t result) :
  *  Move constructor
  */
 Result::Result(Result&& that) :
-    _result(std::move(that._result))
+    _result(std::move(that._result)),
+    _affectedRows(that._affectedRows)
 {}
 
 /**
@@ -157,11 +166,8 @@ bool Result::iterator::operator!=(const iterator& that)
  */
 ResultRow Result::iterator::operator*()
 {
-    // seek to current index
-    _result->seek(_index);
-
-    // and fetch the row
-    return ResultRow(_result, _result->fetch());
+    // fetch the row
+    return ResultRow(_result, _result->fetch(_index));
 }
 
 /**
@@ -169,11 +175,8 @@ ResultRow Result::iterator::operator*()
  */
 std::unique_ptr<ResultRow> Result::iterator::operator->()
 {
-    // seek to current index
-    _result->seek(_index);
-
     // fetch the row into a new pointer
-    return std::unique_ptr<ResultRow>(new ResultRow(_result, _result->fetch()));
+    return std::unique_ptr<ResultRow>(new ResultRow(_result, _result->fetch(_index)));
 }
 
 /**
@@ -216,11 +219,8 @@ ResultRow Result::operator [] (size_t index)
     // check whether we are valid
     if (!_result) throw Exception("Invalid result object");
 
-    // seek to requested index
-    _result->seek(index);
-
-    // and fetch the row
-    return ResultRow(_result, _result->fetch());
+    // fetch the row
+    return ResultRow(_result, _result->fetch(index));
 }
 
 /**

@@ -11,6 +11,9 @@
  */
 namespace React { namespace MySQL {
 
+// forward declaration
+class Statement;
+
 /**
  *  Connection class
  */
@@ -80,6 +83,11 @@ public:
      *  @param  query       the query to execute
      */
     void query(const std::string& query);
+
+    /**
+     *  Friends and family
+     */
+    friend class Statement;
 };
 
 /**

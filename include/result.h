@@ -117,6 +117,11 @@ public:
     Result(MYSQL_RES *result);
 
     /**
+     *  Constructor
+     */
+    Result(std::shared_ptr<ResultImpl>&& implementation);
+
+    /**
      *  Constructor for affected rows
      */
     Result(size_t affectedRows);

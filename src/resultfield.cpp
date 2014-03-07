@@ -22,7 +22,20 @@ namespace React { namespace MySQL {
  */
 ResultField::ResultField(std::shared_ptr<ResultImpl> result, const char *data) :
     _result(result),
-    _data(data)
+    _data(data),
+    _field(nullptr)
+{}
+
+/**
+ *  Constructor
+ *
+ *  @param  result  the result implementation
+ *  @param  field   the field implementation
+ */
+ResultField::ResultField(std::shared_ptr<ResultImpl> result, StatementResultField *field) :
+    _result(result),
+    _data(nullptr),
+    _field(field)
 {}
 
 /**

@@ -1,4 +1,4 @@
-CPP		= g++-4.8
+CPP		= g++
 RM		= rm -f
 CPPFLAGS	= -Wall -c -I. -O2 -flto -std=c++11 -g
 LD		= g++
@@ -16,7 +16,7 @@ shared:	${SHARED_OBJECTS} ${SHARED_LIB}
 static:	${STATIC_OBJECTS} ${STATIC_LIB}
 
 ${SHARED_LIB}: ${SHARED_OBJECTS}
-	${LD} ${LD_FLAGS} -o $@ ${SHARED_OBJECTS} -lev
+	${LD} ${LD_FLAGS} -o $@ ${SHARED_OBJECTS}
 
 ${STATIC_LIB}: ${STATIC_OBJECTS}
 	ar rcs ${STATIC_LIB} ${STATIC_OBJECTS}

@@ -58,6 +58,14 @@ public:
     {
         return std::to_string(_value);
     }
+
+    /**
+     *  Cast to a time structure
+     */
+    virtual operator std::tm() const override
+    {
+        return std::tm{};
+    }
 };
 
 // the different integral fields we support

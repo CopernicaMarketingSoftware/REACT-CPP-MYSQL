@@ -55,6 +55,13 @@ public:
     {
         return isNULL() ? "" : _data;
     }
+
+    /**
+     *  Cast to a time structure
+     */
+    virtual operator std::tm() const override {
+        return std::tm{};
+    }
 };
 
 /**

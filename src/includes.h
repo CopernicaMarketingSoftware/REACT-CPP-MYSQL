@@ -15,6 +15,7 @@
 #include <functional>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 
 /**
  *  Include other files from this library
@@ -33,5 +34,6 @@
 #include "../include/statement.h"
 #include "statementintegralresultfield.h"
 #include "statementdynamicresultfield.h"
+#include "statementdatetimeresultfield.h"
 #include "statementresultimpl.h"
 #include "statementresultinfo.h"

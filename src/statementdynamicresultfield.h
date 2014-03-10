@@ -84,6 +84,13 @@ public:
         return std::string(_value, _size);
     }
 
+    /**
+     *  Cast to a time structure
+     */
+    virtual operator std::tm() const override {
+        return std::tm {};
+    }
+
     // friends and family
     friend class StatementResultInfo;
 };

@@ -31,7 +31,7 @@ ResultField::ResultField(std::shared_ptr<ResultImpl> result, ResultFieldImpl *fi
 bool ResultField::isNULL() const
 {
     // let the field handle this
-    return _field->isNULL();
+    return _field == nullptr || _field->isNULL();
 }
 
 /**

@@ -39,6 +39,11 @@ public:
      *  Cast to a string
      */
     virtual operator std::string() const = 0;
+
+    /**
+     *  Cast to a time structure
+     */
+    virtual operator std::tm() const = 0;
 };
 
 /**

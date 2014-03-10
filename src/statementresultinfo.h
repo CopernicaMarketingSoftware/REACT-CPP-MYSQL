@@ -56,8 +56,49 @@ public:
             // if we are a numeric field, we should store whether we are unsigned
             if (IS_NUM(field->type)) bind.is_unsigned = field->flags & UNSIGNED_FLAG;
 
-            // store the field type
-            bind.buffer_type = field->type;
+            // determine the field type
+            switch (field->type)
+            {
+                case MYSQL_TYPE_INT24:
+                    // this is a weird, 24-bit integer that we cannot
+                    // easily represent, so we force it into a "long"
+                    // (which is actually a regular integer)
+                    bind.buffer_type = MYSQL_TYPE_LONG;
+                    break;
+                case MYSQL_TYPE_DECIMAL:
+                case MYSQL_TYPE_NEWDECIMAL:
+                    // for reasons unknown, MySQL likes to return this
+                    // type as a char array, so we will just use our
+                    // regular string type for it
+                    bind.buffer_type = MYSQL_TYPE_STRING;
+                    break;
+                case MYSQL_TYPE_ENUM:
+                case MYSQL_TYPE_SET:
+                    // mysql returns these as the string representations
+                    bind.buffer_type = MYSQL_TYPE_STRING;
+                    break;
+                case MYSQL_TYPE_GEOMETRY:
+                    // this is a bit clunky: a geometry type
+                    // has a fixed size, depending on what
+                    // specific subtype is used (e.g. a point
+                    // or a polygon). however, since there is
+                    // no easy way to retrieve the specific
+                    // type here, we used a variable-length
+                    // binary field instead
+                    bind.buffer_type = MYSQL_TYPE_BLOB;
+                    break;
+                case MYSQL_TYPE_BIT:
+                    // mysql returns this as as bit-packed char
+                    // array. we could check the length and divide
+                    // it by eight to know the number of characters
+                    // but for now we simply use a string type
+                    bind.buffer_type = MYSQL_TYPE_BLOB;
+                    break;
+                default:
+                    // all other types have native implementation
+                    bind.buffer_type = field->type;
+                    break;
+            }
 
             // store name of the field
             _fields[std::string(field->name, field->name_length)] = _bind.size();
@@ -110,7 +151,7 @@ public:
             for (auto &bind : _bind)
             {
                 // the field we are creating
-                StatementResultField *field;
+                StatementResultField *field = nullptr;
 
                 // create the field
                 switch (bind.buffer_type)
@@ -122,6 +163,7 @@ public:
                         if (bind.is_unsigned)   field = new StatementUnsignedShortResultField();
                         else                    field = new StatementSignedShortResultField();
                         break;
+                    case MYSQL_TYPE_INT24:
                     case MYSQL_TYPE_LONG:
                         if (bind.is_unsigned)   field = new StatementUnsignedLongResultField();
                         else                    field = new StatementSignedLongResultField();
@@ -136,6 +178,13 @@ public:
                     case MYSQL_TYPE_DOUBLE:
                         field = new StatementDoubleResultField();
                         break;
+                    case MYSQL_TYPE_DECIMAL:
+                    case MYSQL_TYPE_NEWDECIMAL:
+                        // yes, really, we get a char array back
+                    case MYSQL_TYPE_ENUM:
+                    case MYSQL_TYPE_SET:
+                    case MYSQL_TYPE_GEOMETRY:
+                    case MYSQL_TYPE_BIT:
                     case MYSQL_TYPE_VARCHAR:
                     case MYSQL_TYPE_VAR_STRING:
                     case MYSQL_TYPE_STRING:
@@ -145,9 +194,29 @@ public:
                     case MYSQL_TYPE_BLOB:
                         field = new StatementDynamicResultField();
                         break;
-                    default:
-                        // TODO: temporal fields
+                    case MYSQL_TYPE_YEAR:
+                    case MYSQL_TYPE_TIME:
+                    case MYSQL_TYPE_DATE:
+                    case MYSQL_TYPE_NEWDATE:
+                    case MYSQL_TYPE_DATETIME:
+                    case MYSQL_TYPE_TIMESTAMP:
+                        field = new StatementDateTimeResultField();
                         break;
+                    case MYSQL_TYPE_NULL:
+                        // field is always null, no need to do anything
+                        break;
+
+                    // default:
+                    //     // TODO: temporal fields
+                    //     break;
+                }
+
+                // if we have no field data, we must be an unknown field
+                // or really a NULL field. we simply add this to the list
+                if (field == nullptr)
+                {
+                    row.emplace_back(nullptr);
+                    continue;
                 }
 
                 // if we have a fixed-size field, we can assign the data- and null-pointer

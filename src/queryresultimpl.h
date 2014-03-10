@@ -24,6 +24,11 @@ private:
     MYSQL_RES *_result;
 
     /**
+     *  Already parsed rows
+     */
+    std::vector<std::vector<std::unique_ptr<ResultFieldImpl>>> _rows;
+
+    /**
      *  Field info
      */
     std::map<std::string, size_t> _fields;
@@ -32,11 +37,6 @@ private:
      *  The current position in the result set
      */
     size_t _position;
-
-    /**
-     *  The number of rows
-     */
-    size_t _size;
 
 public:
     /**
@@ -47,6 +47,7 @@ public:
     QueryResultImpl(MYSQL_RES *result) :
         ResultImpl(),
         _result(result),
+        _rows(mysql_num_rows(_result)),
         _position(0)
     {
         // retrieve number of fields
@@ -61,9 +62,6 @@ public:
             // store field in map
             _fields[std::string(field->name, field->name_length)] = i;
         }
-
-        // the number of rows
-        _size = mysql_num_rows(_result);
     }
 
     /**
@@ -88,32 +86,49 @@ public:
      */
     size_t size() const override
     {
-        return _size;
+        return _rows.size();
     }
 
     /**
      *  Retrieve row at the given index
      */
-    MYSQL_ROW fetch(size_t index) override
+    const std::vector<std::unique_ptr<ResultFieldImpl>>& fetch(size_t index) override
     {
         // check whether the index is valid
         if (index > size()) throw Exception("Invalid result offset");
 
-        // are we already at the required offset?
-        if (_position != index)
+        // did we already prepare this row?
+        if (_rows[index].size() == 0)
         {
-            // seek to the desired offset
-            mysql_data_seek(_result, index);
+            // are we already at the required offset?
+            if (_position != index)
+            {
+                // seek to the desired offset
+                mysql_data_seek(_result, index);
+            }
+
+            // store current position
+            // we add one to the position since
+            // the fetch operation advances to
+            // the next row (which happens below)
+            _position = index + 1;
+
+            // retrieve the row
+            auto row = mysql_fetch_row(_result);
+
+            // reserve space for the rows
+            _rows[index].reserve(_fields.size());
+
+            // and parse them
+            for (size_t i = 0; i < _fields.size(); ++i)
+            {
+                // create field implementation
+                _rows[index].emplace_back(new QueryResultField(row[i]));
+            }
         }
 
-        // store current position
-        // we add one to the position since
-        // the fetch operation advances to
-        // the next row (which happens below)
-        _position = index + 1;
-
-        // return the next row
-        return mysql_fetch_row(_result);
+        // return the cached row
+        return _rows[index];
     }
 };
 

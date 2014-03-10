@@ -39,7 +39,7 @@ const ResultField ResultRow::operator [] (size_t index) const
     // construct a result field, we also pass a result object to ensure
     // that the result will not be destructed for as long as the ResultField
     // objects is kept in scope by the user code
-    return ResultField(_result, _row[index]);
+    return ResultField(_result, _fields[index].get());
 }
 
 /**
@@ -59,7 +59,7 @@ const ResultField ResultRow::operator [] (const std::string &key) const
     // construct a result field, we also pass a result object to ensure
     // that the result will not be destructed for as long as the ResultField
     // objects is kept in scope by the user code
-    return ResultField(_result, _row[iter->second]);
+    return ResultField(_result, _fields[iter->second].get());
 }
 
 /**

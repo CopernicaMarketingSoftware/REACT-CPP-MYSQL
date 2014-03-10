@@ -11,6 +11,9 @@
  */
 namespace React { namespace MySQL {
 
+// forward declaration
+class ResultRowImpl;
+
 /**
  *  Result implementation
  */
@@ -30,7 +33,7 @@ public:
     /**
      *  Retrieve row at the given index
      */
-    virtual MYSQL_ROW fetch(size_t index) = 0;
+    virtual const std::vector<std::unique_ptr<ResultFieldImpl>>& fetch(size_t index) = 0;
 };
 
 /**

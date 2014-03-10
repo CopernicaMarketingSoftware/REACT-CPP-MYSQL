@@ -98,7 +98,7 @@ public:
         size_t count = mysql_stmt_num_rows(_statement);
 
         // the result value with all the rows
-        std::vector<std::vector<std::unique_ptr<StatementResultField>>> result(count);
+        std::vector<std::vector<std::unique_ptr<ResultFieldImpl>>> result(count);
 
         // fetch all rows
         for (auto &row : result)
@@ -109,29 +109,32 @@ public:
             // prepare all fields
             for (auto &bind : _bind)
             {
+                // the field we are creating
+                StatementResultField *field;
+
                 // create the field
                 switch (bind.buffer_type)
                 {
                     case MYSQL_TYPE_TINY:
-                        row.emplace_back(new StatementSignedCharResultField());
+                        field = new StatementSignedCharResultField();
                         break;
                     case MYSQL_TYPE_SHORT:
-                        if (bind.is_unsigned)   row.emplace_back(new StatementUnsignedShortResultField());
-                        else                    row.emplace_back(new StatementSignedShortResultField());
+                        if (bind.is_unsigned)   field = new StatementUnsignedShortResultField();
+                        else                    field = new StatementSignedShortResultField();
                         break;
                     case MYSQL_TYPE_LONG:
-                        if (bind.is_unsigned)   row.emplace_back(new StatementUnsignedLongResultField());
-                        else                    row.emplace_back(new StatementSignedLongResultField());
+                        if (bind.is_unsigned)   field = new StatementUnsignedLongResultField();
+                        else                    field = new StatementSignedLongResultField();
                         break;
                     case MYSQL_TYPE_LONGLONG:
-                        if (bind.is_unsigned)   row.emplace_back(new StatementUnsignedLongLongResultField());
-                        else                    row.emplace_back(new StatementSignedLongLongResultField());
+                        if (bind.is_unsigned)   field = new StatementUnsignedLongLongResultField();
+                        else                    field = new StatementSignedLongLongResultField();
                         break;
                     case MYSQL_TYPE_FLOAT:
-                        row.emplace_back(new StatementFloatResultField());
+                        field = new StatementFloatResultField();
                         break;
                     case MYSQL_TYPE_DOUBLE:
-                        row.emplace_back(new StatementDoubleResultField());
+                        field = new StatementDoubleResultField();
                         break;
                     case MYSQL_TYPE_VARCHAR:
                     case MYSQL_TYPE_VAR_STRING:
@@ -140,15 +143,12 @@ public:
                     case MYSQL_TYPE_MEDIUM_BLOB:
                     case MYSQL_TYPE_LONG_BLOB:
                     case MYSQL_TYPE_BLOB:
-                        row.emplace_back(new StatementDynamicResultField());
+                        field = new StatementDynamicResultField();
                         break;
                     default:
                         // TODO: temporal fields
                         break;
                 }
-
-                // retrieve the freshly minted field
-                auto &field = row.back();
 
                 // if we have a fixed-size field, we can assign the data- and null-pointer
                 if (!field->dynamic())
@@ -160,7 +160,7 @@ public:
                 else
                 {
                     // field is dynamic, cast to get access to properties
-                    StatementDynamicResultField *dynamic = static_cast<StatementDynamicResultField*>(field.get());
+                    StatementDynamicResultField *dynamic = static_cast<StatementDynamicResultField*>(field);
 
                     // set the buffer to be a null pointer and give MySQL a pointer to store the length
                     bind.buffer  = nullptr;
@@ -168,6 +168,9 @@ public:
                     bind.length  = &dynamic->_size;
                     bind.buffer_length = 0;
                 }
+
+                // add the field
+                row.emplace_back(field);
             }
 
             // bind the output parameters to the statement (this has to be done every time)
@@ -193,13 +196,13 @@ public:
                     {
                         // get bind property and field
                         auto &bind  = _bind[i];
-                        auto &field = row[i];
+                        auto *field = static_cast<StatementResultField*>(row[i].get());
 
                         // skip fixed-size fields and NULL fields
                         if (!field->dynamic() || field->isNULL()) continue;
 
                         // cast to a dynamic field
-                        StatementDynamicResultField *dynamic = static_cast<StatementDynamicResultField*>(field.get());
+                        StatementDynamicResultField *dynamic = static_cast<StatementDynamicResultField*>(field);
 
                         // no need to allocate if it is an empty field
                         if (!dynamic->_size) continue;

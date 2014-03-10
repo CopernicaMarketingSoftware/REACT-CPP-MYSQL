@@ -1,5 +1,5 @@
 /**
- *  QueryField.h
+ *  QueryResultField.h
  *
  *  Class representing a result field
  *  from a regular query
@@ -15,7 +15,7 @@ namespace React { namespace MySQL {
 /**
  *  Result field class
  */
-class QueryField : public ResultFieldImpl
+class QueryResultField : public ResultFieldImpl
 {
     /**
      *  Field data
@@ -25,7 +25,7 @@ public:
     /**
      *  Constructor
      */
-    QueryField(const char *data) : _data(data) {}
+    QueryResultField(const char *data) : _data(data) {}
 
     /**
      *  Is this a NULL field?

@@ -27,15 +27,9 @@ private:
     std::shared_ptr<ResultImpl> _result;
 
     /**
-     *  The row returned from MYSQL
-     *  @var    MYSQL_ROW
-     */
-    MYSQL_ROW _row;
-
-    /**
      *  Or a vector with field objects
      */
-    std::vector<std::unique_ptr<StatementResultField>> *_fields;
+    const std::vector<std::unique_ptr<ResultFieldImpl>>& _fields;
 
     /**
      *  Create an iterator class
@@ -180,19 +174,10 @@ public:
      *  Construct the row
      *
      *  @param  result  the result object with all the rows
-     *  @param  row     the fields for this row
-     */
-    ResultRow(std::shared_ptr<ResultImpl> result, MYSQL_ROW row) :
-        _result(result), _row(row), _fields(nullptr) {}
-
-    /**
-     *  Construct the row
-     *
-     *  @param  result  the result object with all the rows
      *  @param  fields  the field object with all the data
      */
-    ResultRow(std::shared_ptr<ResultImpl> result, std::vector<std::unique_ptr<StatementResultField>> *fields) :
-        _result(result), _row(nullptr), _fields(fields) {}
+    ResultRow(std::shared_ptr<ResultImpl> result, const std::vector<std::unique_ptr<ResultFieldImpl>>& fields) :
+        _result(result), _fields(fields) {}
 
     /**
      *  Destructor

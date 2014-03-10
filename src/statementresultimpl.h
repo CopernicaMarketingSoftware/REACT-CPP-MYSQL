@@ -24,12 +24,12 @@ class StatementResultImpl : public ResultImpl
     /**
      *  The field data
      */
-    std::vector<std::vector<std::unique_ptr<StatementResultField>>> _rows;
+    std::vector<std::vector<std::unique_ptr<ResultFieldImpl>>> _rows;
 public:
     /**
      *  Construct result
      */
-    StatementResultImpl(const std::map<std::string, size_t>& fields, std::vector<std::vector<std::unique_ptr<StatementResultField>>>&& rows) :
+    StatementResultImpl(const std::map<std::string, size_t>& fields, std::vector<std::vector<std::unique_ptr<ResultFieldImpl>>>&& rows) :
         _fields(fields),
         _rows(std::move(rows))
     {}
@@ -53,9 +53,9 @@ public:
     /**
      *  Retrieve row at the given index
      */
-    MYSQL_ROW fetch(size_t index) override
+    const std::vector<std::unique_ptr<ResultFieldImpl>>& fetch(size_t index) override
     {
-        return nullptr;
+        return _rows[index];
     }
 };
 

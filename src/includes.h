@@ -19,9 +19,10 @@
 /**
  *  Include other files from this library
  */
+#include "resultfieldimpl.h"
+#include "queryresultfield.h"
 #include "resultimpl.h"
 #include "queryresultimpl.h"
-#include "resultfieldimpl.h"
 #include "statementresultfield.h"
 #include "../include/exception.h"
 #include "../include/resultfield.h"

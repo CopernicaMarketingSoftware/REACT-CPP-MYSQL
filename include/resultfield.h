@@ -14,7 +14,7 @@ namespace React { namespace MySQL {
 
 // forward declaration
 class ResultImpl;
-class StatementResultField;
+class ResultFieldImpl;
 
 /**
  *  Result field
@@ -28,35 +28,41 @@ private:
     std::shared_ptr<ResultImpl> _result;
 
     /**
-     *  The field data
-     */
-    const char *_data;
-
-    /**
      *  The field implementation
      */
-    StatementResultField *_field;
+    ResultFieldImpl *_field;
 public:
-    /**
-     *  Constructor
-     *
-     *  @param  result  the result implementation
-     *  @param  data    the field data
-     */
-    ResultField(std::shared_ptr<ResultImpl> result, const char *data);
-
     /**
      *  Constructor
      *
      *  @param  result  the result implementation
      *  @param  field   the field implementation
      */
-    ResultField(std::shared_ptr<ResultImpl> result, StatementResultField *field);
+    ResultField(std::shared_ptr<ResultImpl> result, ResultFieldImpl *field);
 
     /**
      *  Get whether this field is NULL
      */
     bool isNULL() const;
+
+    /**
+     *  Cast to a number
+     *
+     *  Note that if the value is NULL, this will yield 0.
+     *  To check for NULL values, use the isNULL function.
+     *
+     *  @throws std::invalid_argument   if this field does not contain a number
+     *  @throws std::out_of_range       if the value is too small or too big to fit in the requested type
+     */
+    operator int8_t()   const;
+    operator uint16_t() const;
+    operator int16_t()  const;
+    operator uint32_t() const;
+    operator int32_t()  const;
+    operator uint64_t() const;
+    operator int64_t()  const;
+    operator float()    const;
+    operator double()   const;
 
     /**
      *  Cast to a string
@@ -66,102 +72,6 @@ public:
      *  the isNULL function.
      */
     operator std::string() const;
-
-    /**
-     *  Cast to a float
-     *
-     *  Note that if the value is NULL, this will yield
-     *  an empty string. To check for NULL values, use
-     *  the isNULL function.
-     *
-     *  @throws std::invalid_argument   if this field does not contain a number
-     *  @throws std::out_of_range       if the value is too small or too big to fit in a float
-     */
-    operator float() const;
-
-    /**
-     *  Cast to a double
-     *
-     *  Note that if the value is NULL, this will yield
-     *  an empty string. To check for NULL values, use
-     *  the isNULL function.
-     *
-     *  @throws std::invalid_argument   if this field does not contain a number
-     *  @throws std::out_of_range       if the value is too small or too big to fit in a double
-     */
-    operator double() const;
-
-    /**
-     *  Cast to a long double
-     *
-     *  Note that if the value is NULL, this will yield
-     *  an empty string. To check for NULL values, use
-     *  the isNULL function.
-     *
-     *  @throws std::invalid_argument   if this field does not contain a number
-     *  @throws std::out_of_range       if the value is too small or too big to fit in a long double
-     */
-    operator long double() const;
-
-    /**
-     *  Cast to an integer
-     *
-     *  Note that if the value is NULL, this will yield
-     *  an empty string. To check for NULL values, use
-     *  the isNULL function.
-     *
-     *  @throws std::invalid_argument   if this field does not contain a number
-     *  @throws std::out_of_range       if the value is too small or too big to fit in an integer
-     */
-    operator int() const;
-
-    /**
-     *  Cast to a long integer
-     *
-     *  Note that if the value is NULL, this will yield
-     *  an empty string. To check for NULL values, use
-     *  the isNULL function.
-     *
-     *  @throws std::invalid_argument   if this field does not contain a number
-     *  @throws std::out_of_range       if the value is too small or too big to fit in a long integer
-     */
-    operator long() const;
-
-    /**
-     *  Cast to an unsigned long integer
-     *
-     *  Note that if the value is NULL, this will yield
-     *  an empty string. To check for NULL values, use
-     *  the isNULL function.
-     *
-     *  @throws std::invalid_argument   if this field does not contain a number
-     *  @throws std::out_of_range       if the value is too small or too big to fit in an unsigned long integer
-     */
-    operator unsigned long() const;
-
-    /**
-     *  Cast to a very long integer
-     *
-     *  Note that if the value is NULL, this will yield
-     *  an empty string. To check for NULL values, use
-     *  the isNULL function.
-     *
-     *  @throws std::invalid_argument   if this field does not contain a number
-     *  @throws std::out_of_range       if the value is too small or too big to fit in a very long integer
-     */
-    operator long long() const;
-
-    /**
-     *  Cast to a very long unsigned integer
-     *
-     *  Note that if the value is NULL, this will yield
-     *  an empty string. To check for NULL values, use
-     *  the isNULL function.
-     *
-     *  @throws std::invalid_argument   if this field does not contain a number
-     *  @throws std::out_of_range       if the value is too small or too big to fit in a very long unsigned integer
-     */
-    operator unsigned long long() const;
 };
 
 /**

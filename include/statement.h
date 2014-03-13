@@ -55,7 +55,7 @@ private:
      *  @param  count       number of parameters
      *  @param  callback    callback to inform of success or failure
      */
-    void execute(const std::function<void(Result&& result, const char *error)>& callback, Parameter *parameters, size_t count);
+    void execute(std::function<void(Result&& result, const char *error)>&& callback, Parameter *parameters, size_t count);
 public:
     /**
      *  Constructor
@@ -116,11 +116,12 @@ public:
      *  @param  callback    the callback to be informed when the statement is executed or failed
      *  @param  mixed...    variable number of arguments of different type
      */
-    template <class ...Arguments>
-    void execute(const std::function<void(Result&& result, const char *error)>& callback, Arguments ...parameters)
+    template <class Callback, class ...Arguments>
+    typename std::enable_if<std::is_constructible<std::function<void(Result&&, const char*)>, Callback>::value, void>::type
+    execute(const Callback& callback, Arguments ...parameters)
     {
         // pass to implementation
-        execute(callback, new Parameter[sizeof...(parameters)]{ parameters... }, sizeof...(parameters));
+        execute(std::function<void(Result&&, const char*)>(callback), new Parameter[sizeof...(parameters)]{ parameters... }, sizeof...(parameters));
     }
 
     /**

@@ -106,7 +106,7 @@ void Statement::execute(Parameter *parameters, size_t count)
  *  @param  count       number of parameters
  *  @param  callback    callback to inform of success or failure
  */
-void Statement::execute(const std::function<void(Result&& result, const char *error)>& callback, Parameter *parameters, size_t count)
+void Statement::execute(std::function<void(Result&& result, const char *error)>&& callback, Parameter *parameters, size_t count)
 {
     // execute statement in worker thread
     _connection->_worker.execute([this, parameters, count, callback]() {

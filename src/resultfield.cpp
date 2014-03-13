@@ -67,6 +67,19 @@ ResultField::operator std::string() const
 }
 
 /**
+ *  Cast to a time structure
+ *
+ *  Note that if the value is NULL, or if it is not
+ *  a date type, this function will return an std::tm
+ *  structure set at its epoch (1900-01-01 00:00:00).
+ */
+ResultField::operator std::tm() const
+{
+    // let the field handle this
+    return *_field;
+}
+
+/**
  *  Write the field to a stream
  *
  *  @param  stream  output stream to write to

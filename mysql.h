@@ -18,6 +18,7 @@
 #include <memory>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 
 /**
  *  Other include files

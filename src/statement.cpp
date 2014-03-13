@@ -18,6 +18,7 @@ namespace React { namespace MySQL {
  *
  *  @param  connection  the connection to run the statement on
  *  @param  statement   the statement to execute
+ *  @param  callback    the callback to inform of success or failure
  */
 Statement::Statement(Connection *connection, const std::string& statement, const std::function<void(Statement *statement, const char *error)>& callback) :
     _connection(connection),
@@ -59,6 +60,43 @@ Statement::Statement(Connection *connection, const std::string& statement, const
 
         // all is well, inform the callback
         _connection->_master.execute([this, callback] () { callback(this, nullptr); });
+    });
+}
+
+/**
+ *  Constructor
+ *
+ *  @param  connection  the connection to run the statement on
+ *  @param  statement   the statement to execute
+ */
+Statement::Statement(Connection *connection, const std::string& statement) :
+    _connection(connection),
+    _statement(nullptr),
+    _parameters(0),
+    _info(nullptr)
+{
+    // prepare statement in worker thread
+    _connection->_worker.execute([this, statement]() {
+        // initialize statement
+        if ((_statement = mysql_stmt_init(_connection->_connection)) == nullptr) return;
+
+        // prepare statement
+        if (mysql_stmt_prepare(_statement, statement.c_str(), statement.size()))
+        {
+            // clean up the statement
+            mysql_stmt_close(_statement);
+            _statement = nullptr;
+            return;
+        }
+
+        // store number of parameters in statement
+        _parameters = mysql_stmt_param_count(_statement);
+
+        // retrieve the list of fields for the statement result set (if any)
+        auto *result = mysql_stmt_result_metadata(_statement);
+
+        // if the statement does return fields, store information about it
+        if (result != nullptr) _info = new StatementResultInfo(_statement, result);
     });
 }
 

@@ -62,8 +62,17 @@ public:
      *
      *  @param  connection  the connection to run the statement on
      *  @param  statement   the statement to execute
+     *  @param  callback    the callback to inform of success or failure
      */
     Statement(Connection *connection, const std::string& statement, const std::function<void(Statement *statement, const char *error)>& callback);
+
+    /**
+     *  Constructor
+     *
+     *  @param  connection  the connection to run the statement on
+     *  @param  statement   the statement to execute
+     */
+    Statement(Connection *connection, const std::string& statement);
 
     /**
      *  Copy constructor

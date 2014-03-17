@@ -24,6 +24,7 @@ namespace React { namespace MySQL {
  */
 Connection::Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, uint64_t flags) :
     _connection(nullptr),
+    _reconnected(false),
     _worker(loop),
     _master()
 {
@@ -31,6 +32,9 @@ Connection::Connection(Loop *loop, const std::string& hostname, const std::strin
     _worker.execute([this, hostname, username, password, database, flags]() {
         // initialize connection object
         if ((_connection = mysql_init(nullptr)) == nullptr) return;
+
+        // let us know when we are reconnected
+        mysql_options(_connection, MYSQL_OPT_RECONNECT, &_reconnected);
 
         // connect to mysql
         if (mysql_real_connect(_connection, hostname.c_str(), username.c_str(), password.c_str(), database.c_str(), 0, nullptr, flags) == nullptr) return;
@@ -49,6 +53,7 @@ Connection::Connection(Loop *loop, const std::string& hostname, const std::strin
  */
 Connection::Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, const std::function<void(Connection *connection, const char *error)>& callback, uint64_t flags) :
     _connection(nullptr),
+    _reconnected(false),
     _worker(loop),
     _master()
 {
@@ -61,6 +66,9 @@ Connection::Connection(Loop *loop, const std::string& hostname, const std::strin
             _master.execute([this, callback]() { callback(this, mysql_error(_connection)); });
             return;
         }
+
+        // let us know when we are reconnected
+        mysql_options(_connection, MYSQL_OPT_RECONNECT, &_reconnected);
 
         // connect to mysql
         if (mysql_real_connect(_connection, hostname.c_str(), username.c_str(), password.c_str(), database.c_str(), 0, nullptr, flags) == nullptr)
@@ -82,6 +90,43 @@ Connection::~Connection()
 {
     // close a possible connection
     if (_connection) mysql_close(_connection);
+
+    // this would be nice with a unique_ptr, but
+    // that cannot be easily done due to circular
+    // dependencies, so we do this by hand.
+    for (auto &statement : _statements) delete statement.second;
+}
+
+/**
+ *  Retrieve or create a cached prepared statement
+ *
+ *  @param  query   the query to use for preparing the statement
+ */
+Statement *Connection::statement(const char *query)
+{
+    // are we reconnected?
+    if (_reconnected)
+    {
+        // delete all statements
+        for (auto &statement : _statements) delete statement.second;
+        _statements.clear();
+
+        // clear reconnect flag
+        _reconnected = false;
+    }
+
+    // find a possibly existing statement
+    auto iter = _statements.find(query);
+
+    // do we already have this statement?
+    if (iter != _statements.end()) return iter->second;
+
+    // create a new statement and store it
+    auto *statement = new Statement(this, query);
+    _statements[query] = statement;
+
+    // return the newfangled statement
+    return statement;
 }
 
 /**

@@ -26,6 +26,11 @@ private:
     MYSQL *_connection;
 
     /**
+     *  Did we encounter a reconnect?
+     */
+    my_bool _reconnected;
+
+    /**
      *  The worker operating on MySQL
      */
     Worker _worker;
@@ -34,6 +39,18 @@ private:
      *  Worker for main thread
      */
     Worker _master;
+
+    /**
+     *  Cached prepared statements
+     */
+    std::map<const char *, Statement*> _statements;
+
+    /**
+     *  Retrieve or create a cached prepared statement
+     *
+     *  @param  query   the query to use for preparing the statement
+     */
+    Statement *statement(const char *query);
 public:
     /**
      *  Establish a connection to mysql
@@ -88,6 +105,7 @@ public:
      *  Friends and family
      */
     friend class Statement;
+    friend class CachedStatement;
 };
 
 /**

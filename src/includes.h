@@ -32,6 +32,7 @@
 #include "../include/connection.h"
 #include "../include/parameter.h"
 #include "../include/statement.h"
+#include "../include/cachedstatement.h"
 #include "statementintegralresultfield.h"
 #include "statementdynamicresultfield.h"
 #include "statementdatetimeresultfield.h"

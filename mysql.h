@@ -30,6 +30,7 @@
 #include <reactcpp/mysql/parameter.h>
 #include <reactcpp/mysql/connection.h>
 #include <reactcpp/mysql/statement.h>
+#include <reactcpp/mysql/cachedstatement.h>
 
 /**
  *  End if

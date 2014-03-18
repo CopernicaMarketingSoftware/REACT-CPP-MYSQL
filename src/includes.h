@@ -16,6 +16,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <numeric>
 
 /**
  *  Include other files from this library
@@ -29,6 +30,7 @@
 #include "../include/resultfield.h"
 #include "../include/resultrow.h"
 #include "../include/result.h"
+#include "../include/localparameter.h"
 #include "../include/connection.h"
 #include "../include/parameter.h"
 #include "../include/statement.h"

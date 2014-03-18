@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <numeric>
 
 /**
  *  Other include files
@@ -28,6 +29,7 @@
 #include <reactcpp/mysql/resultrow.h>
 #include <reactcpp/mysql/result.h>
 #include <reactcpp/mysql/parameter.h>
+#include <reactcpp/mysql/localparameter.h>
 #include <reactcpp/mysql/connection.h>
 #include <reactcpp/mysql/statement.h>
 #include <reactcpp/mysql/cachedstatement.h>

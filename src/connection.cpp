@@ -130,6 +130,80 @@ Statement *Connection::statement(const char *query)
 }
 
 /**
+ *  Parse the string and replace all placeholders with
+ *  the provided values.
+ *
+ *  The callback is executed with the result.
+ *
+ *  @param  query       the query to parse
+ *  @param  callback    the callback to give the result
+ *  @param  parameters  placeholder values
+ *  @param  count       number of placeholder values
+ */
+void Connection::prepare(const std::string& query, LocalParameter *parameters, size_t count, const std::function<void(const std::string& query)>& callback)
+{
+    // execute prepare in worker thread
+    _worker.execute([this, callback, query, parameters, count] () {
+        /**
+        *  Calculate the maximum storage size for the parameters.
+        *
+        *  Initializes to the length of the given query, and adds
+        *  the size of each parameter to the total.
+        */
+        size_t size = query.size();
+
+        // add all elements
+        for (size_t i = 0; i < count; ++i) size += parameters[i].size();
+
+        // the parsed query result
+        std::string result;
+        result.reserve(size);
+
+        // begin parsing at the beginning of the string
+        size_t position = query.find_first_of("?!");
+
+        // add the first part of the query (before the first placeholder)
+        result.append(query, 0, position);
+
+        // process all parameters
+        for (size_t i = 0; i < count; ++i)
+        {
+            // are there more parameters to be escaped?
+            if (position == std::string::npos) break;
+
+            // retrieve parameter
+            auto &parameter = parameters[i];
+
+            // should we just escape or also quote
+            switch (query[position])
+            {
+                case '?':
+                    // we need to escape and quote
+                    result.append(parameter.quote(_connection));
+                    break;
+                case '!':
+                    // we only need to escape
+                    result.append(parameter.escape(_connection));
+                    break;
+            }
+
+            // find the next placeholder
+            size_t next = query.find_first_of("?!", position + 1);
+
+            // add the regular query part and store new position
+            result.append(query, position + 1, next - position - 1);
+            position = next;
+        }
+
+        // clean up the parameters
+        delete [] parameters;
+
+        // and inform the callback
+        _master.execute([callback, result]() { callback(result); });
+    });
+}
+
+/**
  *  Execute a query
  *
  *  @param  query       the query to execute

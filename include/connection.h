@@ -51,6 +51,19 @@ private:
      *  @param  query   the query to use for preparing the statement
      */
     Statement *statement(const char *query);
+
+    /**
+     *  Parse the string and replace all placeholders with
+     *  the provided values.
+     *
+     *  The callback is executed with the result.
+     *
+     *  @param  query       the query to parse
+     *  @param  callback    the callback to give the result
+     *  @param  parameters  placeholder values
+     *  @param  count       number of placeholder values
+     */
+    void prepare(const std::string& query, LocalParameter *parameters, size_t count, const std::function<void(const std::string& query)>& callback);
 public:
     /**
      *  Establish a connection to mysql
@@ -100,6 +113,81 @@ public:
      *  @param  query       the query to execute
      */
     void query(const std::string& query);
+
+    /**
+     *  Execute a query with placeholders
+     *
+     *  This works sort-of like a prepared statement, the difference being that the
+     *  query is prepared completely at the client side. This has the advantage of
+     *  allowing placeholders anywhere (including identifiers) as opposed to only
+     *  in WHERE, ON and LIMIT clauses.
+     *
+     *  The query is sent as a regular query, which means it won't use the binary
+     *  protocol. This comes with some extra network overhead. The query is also
+     *  not cached on the server, as is done with prepared statements.
+     *
+     *  The following placeholders are supported:
+     *
+     *  ?   escape string data and quote when necessary
+     *  !   escape string data but do not quote
+     *
+     *  @param  callback    callback to retrieve the result
+     *  @param  query       the query to execute
+     *  @param  mixed...    placeholder values
+     */
+    template <class ...Arguments>
+    void execute(const std::function<void(Result&& result, const char *error)>& callback, const std::string& query, Arguments ...parameters)
+    {
+        // if there are no parameters, we don't need to parse anything
+        if (sizeof...(parameters) == 0)
+        {
+            this->query(query, callback);
+            return;
+        }
+
+        // prepare the query, then execute it
+        prepare(query, new LocalParameter[sizeof...(parameters)]{ parameters... }, sizeof...(parameters), [this, callback](const std::string& query) {
+            // execute query
+            this->query(query, callback);
+        });
+    }
+
+    /**
+     *  Execute a query with placeholders
+     *
+     *  This works sort-of like a prepared statement, the difference being that the
+     *  query is prepared completely at the client side. This has the advantage of
+     *  allowing placeholders anywhere (including identifiers) as opposed to only
+     *  in WHERE, ON and LIMIT clauses.
+     *
+     *  The query is sent as a regular query, which means it won't use the binary
+     *  protocol. This comes with some extra network overhead. The query is also
+     *  not cached on the server, as is done with prepared statements.
+     *
+     *  The following placeholders are supported:
+     *
+     *  ?   escape string data and quote when necessary
+     *  !   escape string data but do not quote
+     *
+     *  @param  query       the query to execute
+     *  @param  mixed...    placeholder values
+     */
+    template <class ...Arguments>
+    void execute(const std::string& query, Arguments ...parameters)
+    {
+        // if there are no parameters, we don't need to parse anything
+        if (sizeof...(parameters) == 0)
+        {
+            this->query(query);
+            return;
+        }
+
+        // prepare the query, then execute it
+        prepare(query, new LocalParameter[sizeof...(parameters)]{ parameters... }, sizeof...(parameters), [this](const std::string& query) {
+            // execute query
+            this->query(query);
+        });
+    }
 
     /**
      *  Friends and family

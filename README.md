@@ -24,13 +24,15 @@ int main()
     React::MainLoop loop;
 
     // create the connection to MySQL
-    React::MySQL::Connection connection(&loop, "mysql.example.org", "example user", "example password", "example database", [](React::MySQL::Connection *connection, const char *error) {
+    React::MySQL::Connection connection(&loop, "mysql.example.org", "example user", "example password", "example database");
+
+    // get connection updates
+    connection.onConnected([](const char *error) {
         /**
          *  This function will be called upon success/failure of the connection
          *
-         *  The first parameter is always the connection object. The second,
-         *  error parameter will be set to NULL upon success, and set to a
-         *  c-string otherwise.
+         *  The error parameter will be set to NULL upon success, and set
+         *  to a c-string containing a description of the problem otherwise.
          */
         if (error) std::cout << "Failed to connect: " << error << std::endl;
         else std::cout << "Connected" << std::endl;
@@ -41,24 +43,10 @@ int main()
      *  however, perfectly valid to start sending queries to MySQL.
      *
      *  The queries will be executed after the connection has been established.
-     *  If the connection somehow fails, all the query callbacks will be
-     *  called with an error to indicate this condition
+     *  If the connection somehow fails, all the failure callbacks will be
+     *  called with a description of the error to indicate this condition.
      */
-    connection.query("SELECT * FROM test LIMIT 10", [](React::MySQL::Result&& result, const char *error) {
-        /**
-         *  As with the connection callback, the error parameter
-         *  will be set to to NULL upon success, and set to a
-         *  c-string otherwise.
-         *
-         *  In case of an error, an invalid result object will
-         *  be provided, that has zero rows and no affected rows.
-         */
-        if (error)
-        {
-            std::cout << "Query error: " << error << std::endl;
-            exit(1);
-        }
-
+    connection.query("SELECT * FROM test LIMIT 10").onSuccess([](React::MySQL::Result&& result) {
         // this is a normal select query, affectedRows should be zero
         assert(result.affectedRows() == 0);
 
@@ -81,6 +69,13 @@ int main()
 
         // stop the application
         exit(0);
+    }).onFailure([](const char *error) {
+        /**
+         *  In case of an error, the error parameter will contain
+         *  a pointer to a description of the error.
+         */
+        std::cout << "Query error: " << error << std::endl;
+        exit(1);
     });
 
     // run the event loop
@@ -96,9 +91,7 @@ as an array. The rows can only be accessed with a numerical index, while the fie
 their field index as well as their name:
 
 ```c++
-connection.query("SELECT a, b, c FROM test", [](React::MySQL::Result&& result, const char *error) {
-    // assume error handling has been done
-
+connection.query("SELECT a, b, c FROM test").onSuccess([](React::MySQL::Result&& result) {
     // loop over the rows by their index
     for (size_t i = 0; i < result.size(); ++i)
     {
@@ -125,33 +118,6 @@ connection.query("SELECT a, b, c FROM test", [](React::MySQL::Result&& result, c
      */
     auto row = result[17];
 });
-```
-
-For convenience, all functions can be called without their corresponding callback. This could be useful
-for non-critical operations, like truncating a log table:
-
-```c
-#include <reactcpp/mysql.h>
-#include <iostream>
-#include <cassert>
-
-/**
- *  Main application procedure
- */
-int main()
-{
-    // create an event loop
-    React::MainLoop loop;
-
-    // create the connection to MySQL and clean out the logs
-    React::MySQL::Connection connection(&loop, "mysql.example.org", "example user", "example password", "example database");
-    connection.query("TRUNCATE logs");
-
-    // run the event loop
-    loop.run();
-
-    // done
-    return 0;
 ```
 
 Prepared Statements
@@ -182,7 +148,10 @@ int main()
     React::MySQL::Connection connection(&loop, "mysql.example.org", "example user", "example password", "example database");
 
     // create the statement
-    React::MySQL::Statement statement(&connection, "INSERT INTO logs (event_time, description) VALUES (NOW(), ?), (NOW(), ?), (NOW(), ?)", [](React::MySQL::Statement *statement, const char *error) {
+    React::MySQL::Statement statement(&connection, "INSERT INTO logs (event_time, description) VALUES (NOW(), ?), (NOW(), ?), (NOW(), ?)")
+
+    // catch statement preparation errors
+    statement.onPrepared([](const char *error) {
         /**
          *  As with the connection class and query function
          *  the error parameter will be a NULL pointer if the
@@ -222,14 +191,10 @@ int main()
      *  We can also select data with prepared statements.
      *
      *  Just as with other functions and classes, we simply
-     *  provide a callback function that will receive the data.
-     *  However, unlike everywhere else, the execute method
-     *  takes the callback as the first parameter.
+     *  register a callback function that will receive the data.
      */
     React::MySQL::Statement selectStatement(&connection, "SELECT a, b, c FROM test WHERE a BETWEEN ? and ?");
-    selectStatement.execute([](React::MySQL::Result&& result, const char *error) {
-        // assume proper error handling was done
-
+    selectStatement.execute(5, 10).onSuccess([](React::MySQL::Result&& result) {
         // this is a normal select query, affectedRows should be zero
         assert(result.affectedRows() == 0);
 
@@ -249,5 +214,5 @@ int main()
             // close the row
             std::cout << "}" << std::endl;
         }
-    }, 5, 10);
+    });
 }

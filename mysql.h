@@ -24,6 +24,7 @@
 /**
  *  Other include files
  */
+#include <reactcpp/mysql/deferred.h>
 #include <reactcpp/mysql/exception.h>
 #include <reactcpp/mysql/resultfield.h>
 #include <reactcpp/mysql/resultrow.h>

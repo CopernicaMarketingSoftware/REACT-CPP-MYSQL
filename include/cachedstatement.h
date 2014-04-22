@@ -44,43 +44,9 @@ public:
     /**
      *  Execute the statement
      *
-     *  Note:   the number of arguments (excluding the callback) must match
-     *          the number of placeholders in the statement string. If not,
-     *          the statement will not be executed and the callback will be
-     *          invoked immediately with an error.
-     *
-     *  The following parameter types are supported and map to the following MySQL types
-     *
-     *  Variable type       MySQL column type
-     *  -------------       -----------------
-     *  signed char         TINYINT
-     *  short int           SMALLINT
-     *  int                 INT
-     *  long long int       BIGINT
-     *  float               FLOAT
-     *  double              DOUBLE
-     *  std::string         TEXT, CHAR or VARCHAR
-     *  std::vector<char>   BLOB, BINARY or VARBINARY
-     *  std::nullptr_t      NULL
-     *
-     *  @param  callback    the callback to be informed when the statement is executed or failed
-     *  @param  mixed...    variable number of arguments of different type
-     */
-    template <class Callback, class ...Arguments>
-    typename std::enable_if<std::is_constructible<std::function<void(Result&&, const char*)>, Callback>::value, void>::type
-    execute(const Callback& callback, Arguments ...parameters)
-    {
-        // pass to implementation
-        _statement->execute(callback, std::forward<Arguments>(parameters)...);
-    }
-
-    /**
-     *  Execute the statement
-     *
-     *  Note:   the number of arguments (excluding the callback) must match
-     *          the number of placeholders in the statement string. If not,
-     *          the statement will not be executed and the callback will be
-     *          invoked immediately with an error.
+     *  Note:   the number of arguments must match the number of placeholders
+     *          in the statement string. If not, the statement will not be
+     *          executed and the callback will be invoked immediately with an error.
      *
      *  The following parameter types are supported and map to the following MySQL types
      *
@@ -100,10 +66,10 @@ public:
      *  @param  callback    the callback to be informed when the statement is executed or failed
      */
     template <class ...Arguments>
-    void execute(Arguments ...parameters)
+    Deferred& execute(Arguments ...parameters)
     {
         // pass to implementation
-        _statement->execute(std::forward<Arguments>(parameters)...);
+        return _statement->execute(std::forward<Arguments>(parameters)...);
     }
 };
 

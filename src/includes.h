@@ -26,6 +26,7 @@
 #include "resultimpl.h"
 #include "queryresultimpl.h"
 #include "statementresultfield.h"
+#include "../include/deferred.h"
 #include "../include/exception.h"
 #include "../include/resultfield.h"
 #include "../include/resultrow.h"

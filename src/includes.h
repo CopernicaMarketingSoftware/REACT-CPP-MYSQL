@@ -11,7 +11,7 @@
  */
 #include <reactcpp.h>
 #include <variant.h>
-#include <mysql.h>
+#include <mysql/mysql.h>
 #include <functional>
 #include <cstdlib>
 #include <cstring>

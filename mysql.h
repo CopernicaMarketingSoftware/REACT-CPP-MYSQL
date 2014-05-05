@@ -5,15 +5,15 @@
  *
  *  @copyright 2014 Copernica BV
  */
-#ifndef MYSQLCPP_H
-#define MYSQLCPP_H
+
+#pragma once
 
 /**
  *  Dependencies
  */
 #include <reactcpp.h>
 #include <variant.h>
-#include <mysql.h>
+#include <mysql/mysql.h>
 #include <functional>
 #include <memory>
 #include <cstdlib>
@@ -34,8 +34,3 @@
 #include <reactcpp/mysql/connection.h>
 #include <reactcpp/mysql/statement.h>
 #include <reactcpp/mysql/cachedstatement.h>
-
-/**
- *  End if
- */
-#endif

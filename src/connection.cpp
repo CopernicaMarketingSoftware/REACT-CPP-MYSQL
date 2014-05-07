@@ -25,8 +25,8 @@ namespace React { namespace MySQL {
 Connection::Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, uint64_t flags) :
     _connection(nullptr),
     _reconnected(false),
-    _worker(loop),
-    _master()
+    _worker(),
+    _master(loop)
 {
     // establish the connection in the worker thread
     _worker.execute([this, hostname, username, password, database, flags]() {

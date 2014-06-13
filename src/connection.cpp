@@ -7,11 +7,24 @@
  */
 
 #include "includes.h"
+#include "library.h"
 
 /**
  *  Set up namespace
  */
 namespace React { namespace MySQL {
+
+/**
+ *  Initializes the MySQL library
+ *
+ *  The library will be automatically de-initialized
+ *  on program termination.
+ */
+static void initialize()
+{
+    // keep a single static library instance available
+    static Library library;
+}
 
 /**
  *  Establish a connection to mysql
@@ -28,6 +41,9 @@ Connection::Connection(Loop *loop, const std::string& hostname, const std::strin
     _worker(),
     _master(loop)
 {
+    // initialize the library
+    initialize();
+
     // establish the connection in the worker thread
     _worker.execute([this, hostname, username, password, database, flags]() {
         // initialize connection object
@@ -59,13 +75,19 @@ Connection::Connection(Loop *loop, const std::string& hostname, const std::strin
  */
 Connection::~Connection()
 {
-    // close a possible connection
-    if (_connection) mysql_close(_connection);
+    // clean up mysql data when the worker stops
+    _worker.execute([this]() {
+        // close a possible connection
+        if (_connection) mysql_close(_connection);
 
-    // this would be nice with a unique_ptr, but
-    // that cannot be easily done due to circular
-    // dependencies, so we do this by hand.
-    for (auto &statement : _statements) delete statement.second;
+        // this would be nice with a unique_ptr, but
+        // that cannot be easily done due to circular
+        // dependencies, so we do this by hand.
+        for (auto &statement : _statements) delete statement.second;
+
+        // clean up thread-local mysql data
+        mysql_thread_end();
+    });
 }
 
 /**

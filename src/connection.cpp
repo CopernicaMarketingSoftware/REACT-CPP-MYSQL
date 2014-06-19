@@ -36,6 +36,7 @@ static void initialize()
  *  @param  database    the database to use
  */
 Connection::Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, uint64_t flags) :
+    _loop(loop),
     _connection(nullptr),
     _reconnected(false),
     _worker(),
@@ -44,13 +45,16 @@ Connection::Connection(Loop *loop, const std::string& hostname, const std::strin
     // initialize the library
     initialize();
 
+    // keep the loop alive while the callback runs
+    auto reference = std::make_shared<React::LoopReference>(_loop);
+
     // establish the connection in the worker thread
-    _worker.execute([this, hostname, username, password, database, flags]() {
+    _worker.execute([this, reference, hostname, username, password, database, flags]() {
         // initialize connection object
         if ((_connection = mysql_init(nullptr)) == nullptr)
         {
             // could not initialize connection object
-            if (_connectCallback) _master.execute([this]() { _connectCallback(mysql_error(_connection)); });
+            _master.execute([this, reference]() { if (_connectCallback) _connectCallback(mysql_error(_connection)); });
             return;
         }
 
@@ -61,12 +65,12 @@ Connection::Connection(Loop *loop, const std::string& hostname, const std::strin
         if (mysql_real_connect(_connection, hostname.c_str(), username.c_str(), password.c_str(), database.c_str(), 0, nullptr, flags) == nullptr)
         {
             // could not connect to mysql
-            if (_connectCallback) _master.execute([this]() { _connectCallback(mysql_error(_connection)); });
+            _master.execute([this, reference]() { if (_connectCallback) _connectCallback(mysql_error(_connection)); });
             return;
         }
 
         // we are connected, signal success to the callback
-        if (_connectCallback) _master.execute([this]() { _connectCallback(nullptr); });
+        _master.execute([this, reference]() { if (_connectCallback) _connectCallback(nullptr); });
     });
 }
 
@@ -146,8 +150,11 @@ Statement *Connection::statement(const char *query)
  */
 void Connection::prepare(const std::string& query, LocalParameter *parameters, size_t count, const std::function<void(const std::string& query)>& callback)
 {
+    // keep the loop alive while the callback runs
+    auto reference = std::make_shared<React::LoopReference>(_loop);
+
     // execute prepare in worker thread
-    _worker.execute([this, callback, query, parameters, count] () {
+    _worker.execute([this, reference, callback, query, parameters, count] () {
         /**
         *  Calculate the maximum storage size for the parameters.
         *
@@ -203,7 +210,7 @@ void Connection::prepare(const std::string& query, LocalParameter *parameters, s
         delete [] parameters;
 
         // and inform the callback
-        _master.execute([callback, result]() { callback(result); });
+        _master.execute([reference, callback, result]() { callback(result); });
     });
 }
 
@@ -217,13 +224,16 @@ Deferred& Connection::query(const std::string& query)
     // create a new deferred handler
     auto deferred = std::make_shared<Deferred>();
 
+    // keep the loop alive while the callback runs
+    auto reference = std::make_shared<React::LoopReference>(_loop);
+
     // execute query in the worker thread
-    _worker.execute([this, query, deferred]() {
+    _worker.execute([this, reference, query, deferred]() {
         // run the query, should get zero on success
         if (mysql_query(_connection, query.c_str()))
         {
             // query failed, report to listener
-            if (deferred->requireStatus()) _master.execute([this, deferred]() { deferred->failure(mysql_error(_connection)); });
+            if (deferred->requireStatus()) _master.execute([this, reference, deferred]() { deferred->failure(mysql_error(_connection)); });
             return;
         }
 
@@ -248,17 +258,17 @@ Deferred& Connection::query(const std::string& query)
                 if (result)
                 {
                     // create the result and pass it to the listener
-                    _master.execute([this, deferred, result]() { deferred->success(Result(result)); });
+                    _master.execute([this, reference, deferred, result]() { deferred->success(Result(result)); });
                 }
                 else if (mysql_field_count(_connection))
                 {
                     // the query *should* have returned a result, this is an error
-                    _master.execute([this, deferred]() { deferred->failure(mysql_error(_connection)); });
+                    _master.execute([this, reference, deferred]() { deferred->failure(mysql_error(_connection)); });
                 }
                 else
                 {
                     // this is a query without a result set (i.e.: update, insert or delete)
-                    _master.execute([this, deferred, affectedRows]() { deferred->success(Result(affectedRows)); });
+                    _master.execute([this, reference, deferred, affectedRows]() { deferred->success(Result(affectedRows)); });
                 }
             }
 
@@ -273,7 +283,7 @@ Deferred& Connection::query(const std::string& query)
                     continue;
                 default:
                     // this is an error
-                    _master.execute([this, deferred]() { deferred->failure(mysql_error(_connection)); });
+                    _master.execute([this, reference, deferred]() { deferred->failure(mysql_error(_connection)); });
                     return;
             }
         }

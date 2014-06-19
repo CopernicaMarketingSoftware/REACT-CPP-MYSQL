@@ -21,6 +21,11 @@ class Connection
 {
 private:
     /**
+     *  The loop we work with
+     */
+    React::Loop *_loop;
+
+    /**
      *  Connection to mysql
      */
     MYSQL *_connection;

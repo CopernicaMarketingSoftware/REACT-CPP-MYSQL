@@ -18,6 +18,11 @@ class ResultFieldImpl
 {
 public:
     /**
+     *  Destructor
+     */
+    virtual ~ResultFieldImpl() {}
+
+    /**
      *  Is this a NULL field?
      */
     virtual bool isNULL() const = 0;

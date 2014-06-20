@@ -81,13 +81,13 @@ Connection::~Connection()
 {
     // clean up mysql data when the worker stops
     _worker.execute([this]() {
-        // close a possible connection
-        if (_connection) mysql_close(_connection);
-
         // this would be nice with a unique_ptr, but
         // that cannot be easily done due to circular
         // dependencies, so we do this by hand.
         for (auto &statement : _statements) delete statement.second;
+
+        // close a possible connection
+        if (_connection) mysql_close(_connection);
 
         // clean up thread-local mysql data
         mysql_thread_end();

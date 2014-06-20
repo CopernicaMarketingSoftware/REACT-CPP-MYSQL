@@ -41,6 +41,11 @@ private:
     my_bool _reconnected;
 
     /**
+     *  Cached prepared statements
+     */
+    std::map<const char *, Statement*> _statements;
+
+    /**
      *  Worker for main thread
      */
     Worker _master;
@@ -49,11 +54,6 @@ private:
      *  The worker operating on MySQL
      */
     Worker _worker;
-
-    /**
-     *  Cached prepared statements
-     */
-    std::map<const char *, Statement*> _statements;
 
     /**
      *  Retrieve or create a cached prepared statement

@@ -39,8 +39,8 @@ Connection::Connection(Loop *loop, const std::string& hostname, const std::strin
     _loop(loop),
     _connection(nullptr),
     _reconnected(false),
-    _worker(),
-    _master(loop)
+    _master(loop),
+    _worker()
 {
     // initialize the library
     initialize();

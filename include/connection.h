@@ -41,14 +41,14 @@ private:
     my_bool _reconnected;
 
     /**
-     *  The worker operating on MySQL
-     */
-    Worker _worker;
-
-    /**
      *  Worker for main thread
      */
     Worker _master;
+
+    /**
+     *  The worker operating on MySQL
+     */
+    Worker _worker;
 
     /**
      *  Cached prepared statements

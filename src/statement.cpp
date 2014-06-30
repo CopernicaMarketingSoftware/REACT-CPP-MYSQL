@@ -26,19 +26,22 @@ Statement::Statement(Connection *connection, const std::string& statement) :
     _parameters(0),
     _info(nullptr)
 {
+    // keep the loop alive while the callback runs
+    auto reference = std::make_shared<React::LoopReference>(_connection->_loop);
+
     // prepare statement in worker thread
-    _connection->_worker.execute([this, statement]() {
+    _connection->_worker.execute([this, reference, statement]() {
         // initialize statement
         if ((_statement = mysql_stmt_init(_connection->_connection)) == nullptr)
         {
-            if (_prepareCallback) _connection->_master.execute([this]() { _prepareCallback("Unable to initialize statement"); });
+            _connection->_master.execute([this, reference]() { if (_prepareCallback) _prepareCallback("Unable to initialize statement"); });
             return;
         }
 
         // prepare statement
         if (mysql_stmt_prepare(_statement, statement.c_str(), statement.size()))
         {
-            _connection->_master.execute([this]() {
+            _connection->_master.execute([this, reference]() {
                 // inform callback of problem
                 if (_prepareCallback) _prepareCallback(mysql_stmt_error(_statement));
 
@@ -59,7 +62,7 @@ Statement::Statement(Connection *connection, const std::string& statement) :
         if (result != nullptr) _info = new StatementResultInfo(_statement, result);
 
         // all is well, inform the callback
-        if (_prepareCallback) _connection->_master.execute([this] () { _prepareCallback(nullptr); });
+        _connection->_master.execute([this, reference] () { if (_prepareCallback) _prepareCallback(nullptr); });
     });
 }
 
@@ -86,12 +89,15 @@ Deferred& Statement::execute(Parameter *parameters, size_t count)
     // create the deferred handler
     auto deferred = std::make_shared<Deferred>();
 
+    // keep the loop alive while the callback runs
+    auto reference = std::make_shared<React::LoopReference>(_connection->_loop);
+
     // execute statement in worker thread
-    _connection->_worker.execute([this, parameters, count, deferred]() {
+    _connection->_worker.execute([this, reference, parameters, count, deferred]() {
         // check for a valid statement
         if (_statement == nullptr)
         {
-            _connection->_master.execute([deferred]() { deferred->failure("Cannot execute invalid statement"); });
+            _connection->_master.execute([reference, deferred]() { deferred->failure("Cannot execute invalid statement"); });
             delete [] parameters;
             return;
         }
@@ -99,7 +105,7 @@ Deferred& Statement::execute(Parameter *parameters, size_t count)
         // check for correct number of arguments and bind the parameters
         if (count != _parameters)
         {
-            _connection->_master.execute([deferred]() { deferred->failure("Incorrect number of arguments"); });
+            _connection->_master.execute([reference, deferred]() { deferred->failure("Incorrect number of arguments"); });
             delete [] parameters;
             return;
         }
@@ -107,7 +113,7 @@ Deferred& Statement::execute(Parameter *parameters, size_t count)
         // bind the parameters and execute the statement
         if (mysql_stmt_bind_param(_statement, parameters) || mysql_stmt_execute(_statement))
         {
-            _connection->_master.execute([this, deferred]() { deferred->failure(mysql_stmt_error(_statement)); });
+            _connection->_master.execute([this, reference, deferred]() { deferred->failure(mysql_stmt_error(_statement)); });
             delete [] parameters;
             return;
         }
@@ -123,7 +129,7 @@ Deferred& Statement::execute(Parameter *parameters, size_t count)
         }
 
         // if the query has no result set, we create the result with the affected rows
-        if (_info == nullptr) _connection->_master.execute([this, deferred]() {
+        if (_info == nullptr) _connection->_master.execute([this, reference, deferred]() {
             // the statement already knows the number of affected rows
             // so doing this on the master will not block at all
             deferred->success(Result(mysql_stmt_affected_rows(_statement)));
@@ -134,7 +140,7 @@ Deferred& Statement::execute(Parameter *parameters, size_t count)
             auto rows = _info->rows();
 
             // send the result to the callback
-           _connection->_master.execute([deferred, rows]() { deferred->success(Result(std::move(rows))); });
+           _connection->_master.execute([reference, deferred, rows]() { deferred->success(Result(std::move(rows))); });
         }
     });
 

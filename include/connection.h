@@ -21,6 +21,11 @@ class Connection
 {
 private:
     /**
+     *  The loop we work with
+     */
+    React::Loop *_loop;
+
+    /**
      *  Connection to mysql
      */
     MYSQL *_connection;
@@ -36,9 +41,9 @@ private:
     my_bool _reconnected;
 
     /**
-     *  The worker operating on MySQL
+     *  Cached prepared statements
      */
-    Worker _worker;
+    std::map<const char *, Statement*> _statements;
 
     /**
      *  Worker for main thread
@@ -46,9 +51,9 @@ private:
     Worker _master;
 
     /**
-     *  Cached prepared statements
+     *  The worker operating on MySQL
      */
-    std::map<const char *, Statement*> _statements;
+    Worker _worker;
 
     /**
      *  Retrieve or create a cached prepared statement

@@ -41,10 +41,10 @@ public:
     virtual operator int8_t()   const override { return isNULL() ? 0 : std::stoi(_data);  }
     virtual operator uint16_t() const override { return isNULL() ? 0 : std::stoi(_data);  }
     virtual operator int16_t()  const override { return isNULL() ? 0 : std::stoi(_data);  }
-    virtual operator uint32_t() const override { return isNULL() ? 0 : std::stoi(_data);  }
+    virtual operator uint32_t() const override { return isNULL() ? 0 : std::stoul(_data);  }
     virtual operator int32_t()  const override { return isNULL() ? 0 : std::stoi(_data);  }
-    virtual operator uint64_t() const override { return isNULL() ? 0 : std::stoul(_data); }
-    virtual operator int64_t()  const override { return isNULL() ? 0 : std::stol(_data);  }
+    virtual operator uint64_t() const override { return isNULL() ? 0 : std::stoull(_data); }
+    virtual operator int64_t()  const override { return isNULL() ? 0 : std::stoll(_data);  }
     virtual operator float()    const override { return isNULL() ? 0 : std::stof(_data);  }
     virtual operator double()   const override { return isNULL() ? 0 : std::stod(_data);  }
 

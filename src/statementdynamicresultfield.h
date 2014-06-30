@@ -69,10 +69,10 @@ public:
     virtual operator int8_t()   const override { return isNULL() ? 0 : std::stoi(_value);  }
     virtual operator uint16_t() const override { return isNULL() ? 0 : std::stoi(_value);  }
     virtual operator int16_t()  const override { return isNULL() ? 0 : std::stoi(_value);  }
-    virtual operator uint32_t() const override { return isNULL() ? 0 : std::stoi(_value);  }
+    virtual operator uint32_t() const override { return isNULL() ? 0 : std::stoul(_value);  }
     virtual operator int32_t()  const override { return isNULL() ? 0 : std::stoi(_value);  }
-    virtual operator uint64_t() const override { return isNULL() ? 0 : std::stoul(_value); }
-    virtual operator int64_t()  const override { return isNULL() ? 0 : std::stol(_value);  }
+    virtual operator uint64_t() const override { return isNULL() ? 0 : std::stoull(_value); }
+    virtual operator int64_t()  const override { return isNULL() ? 0 : std::stoll(_value);  }
     virtual operator float()    const override { return isNULL() ? 0 : std::stof(_value);  }
     virtual operator double()   const override { return isNULL() ? 0 : std::stod(_value);  }
 

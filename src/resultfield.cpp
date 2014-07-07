@@ -54,6 +54,13 @@ ResultField::operator float()    const { return *_field; }
 ResultField::operator double()   const { return *_field; }
 
 /**
+ *  Cast to a uint128_t, this assumes a binary(16) field network byte ordering
+ *
+ *  @throws std::out_of_range      if the value is not the correct size (16 bytes)
+ */
+ResultField::operator uint128_t() const { return *_field; }
+
+/**
  *  Cast to a string
  *
  *  Note that if the value is NULL, this will yield

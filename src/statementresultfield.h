@@ -66,15 +66,16 @@ public:
     /**
      *  Cast to a number
      */
-    virtual operator int8_t()   const override = 0;
-    virtual operator uint16_t() const override = 0;
-    virtual operator int16_t()  const override = 0;
-    virtual operator uint32_t() const override = 0;
-    virtual operator int32_t()  const override = 0;
-    virtual operator uint64_t() const override = 0;
-    virtual operator int64_t()  const override = 0;
-    virtual operator float()    const override = 0;
-    virtual operator double()   const override = 0;
+    virtual operator int8_t()    const override = 0;
+    virtual operator uint16_t()  const override = 0;
+    virtual operator int16_t()   const override = 0;
+    virtual operator uint32_t()  const override = 0;
+    virtual operator int32_t()   const override = 0;
+    virtual operator uint64_t()  const override = 0;
+    virtual operator int64_t()   const override = 0;
+    virtual operator float()     const override = 0;
+    virtual operator double()    const override = 0;
+    virtual operator uint128_t() const override = 0;
 
     /**
      *  Cast to a string

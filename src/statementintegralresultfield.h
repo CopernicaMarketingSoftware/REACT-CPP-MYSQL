@@ -41,15 +41,16 @@ public:
     /**
      *  Cast to a number
      */
-    virtual operator int8_t()   const override { return isNULL() ? 0 : _value; }
-    virtual operator uint16_t() const override { return isNULL() ? 0 : _value; }
-    virtual operator int16_t()  const override { return isNULL() ? 0 : _value; }
-    virtual operator uint32_t() const override { return isNULL() ? 0 : _value; }
-    virtual operator int32_t()  const override { return isNULL() ? 0 : _value; }
-    virtual operator uint64_t() const override { return isNULL() ? 0 : _value; }
-    virtual operator int64_t()  const override { return isNULL() ? 0 : _value; }
-    virtual operator float()    const override { return isNULL() ? 0 : _value; }
-    virtual operator double()   const override { return isNULL() ? 0 : _value; }
+    virtual operator int8_t()    const override { return isNULL() ? 0 : _value; }
+    virtual operator uint16_t()  const override { return isNULL() ? 0 : _value; }
+    virtual operator int16_t()   const override { return isNULL() ? 0 : _value; }
+    virtual operator uint32_t()  const override { return isNULL() ? 0 : _value; }
+    virtual operator int32_t()   const override { return isNULL() ? 0 : _value; }
+    virtual operator uint64_t()  const override { return isNULL() ? 0 : _value; }
+    virtual operator int64_t()   const override { return isNULL() ? 0 : _value; }
+    virtual operator float()     const override { return isNULL() ? 0 : _value; }
+    virtual operator double()    const override { return isNULL() ? 0 : _value; }
+    virtual operator uint128_t() const override { return isNULL() ? 0 : (uint64_t) _value; }
 
     /**
      *  Cast to a string

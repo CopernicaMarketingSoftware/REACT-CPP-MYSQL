@@ -115,6 +115,7 @@ public:
 
             // retrieve the row
             auto row = mysql_fetch_row(_result);
+            auto lengths = mysql_fetch_lengths(_result);
 
             // reserve space for the rows
             _rows[index].reserve(_fields.size());
@@ -123,7 +124,7 @@ public:
             for (size_t i = 0; i < _fields.size(); ++i)
             {
                 // create field implementation
-                _rows[index].emplace_back(new QueryResultField(row[i]));
+                _rows[index].emplace_back(new QueryResultField(row[i], lengths[i]));
             }
         }
 

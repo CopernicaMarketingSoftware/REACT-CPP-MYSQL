@@ -75,6 +75,18 @@ public:
     virtual operator int64_t()  const override { return isNULL() ? 0 : std::stoll(_value);  }
     virtual operator float()    const override { return isNULL() ? 0 : std::stof(_value);  }
     virtual operator double()   const override { return isNULL() ? 0 : std::stod(_value);  }
+    virtual operator uint128_t() const override
+    {
+        // Throw in case we are not the correct size
+        if (_size != sizeof(uint128_t)) throw std::out_of_range("ResultField is the incorrect size, should be 16 bytes");
+
+        // Declare our uint128_t output and copy the raw bytes from tmp into it
+        uint128_t output;
+        memcpy(&output, _value, sizeof(output));
+
+        // Convert from network byte ordering to host byte ordering and return
+        return ntohl128(output);
+    }
 
     /**
      *  Cast to a string

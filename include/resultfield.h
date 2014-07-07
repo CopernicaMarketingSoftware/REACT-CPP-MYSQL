@@ -65,6 +65,13 @@ public:
     operator double()   const;
 
     /**
+     *  Cast to a uint128_t, this assumes a binary(16) field network byte ordering
+     *
+     *  @throws std::out_of_range      if the value is not the correct size (16 bytes)
+     */
+    operator uint128_t() const;
+
+    /**
      *  Cast to a string
      *
      *  Note that if the value is NULL, this will yield

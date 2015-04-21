@@ -20,7 +20,7 @@ namespace React { namespace MySQL {
  *  The library will be automatically de-initialized
  *  on program termination.
  */
-static void initialize()
+static void init()
 {
     // keep a single static library instance available
     static Library library;
@@ -34,16 +34,17 @@ static void initialize()
  *  @param  username    the username to login with
  *  @param  password    the password to authenticate with
  *  @param  database    the database to use
+ *  @param  initialize  do we need to initialize (and cleanup) the mysql library
  */
-Connection::Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, uint64_t flags) :
+Connection::Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, uint64_t flags, bool initialize) :
     _loop(loop),
     _connection(nullptr),
     _reconnected(false),
     _master(loop),
     _worker()
 {
-    // initialize the library
-    initialize();
+    // initialize the library if necessary
+    if (initialize) init();
 
     // keep the loop alive while the callback runs
     auto reference = std::make_shared<React::LoopReference>(_loop);

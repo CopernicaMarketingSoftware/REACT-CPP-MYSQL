@@ -84,8 +84,9 @@ public:
      *  @param  password    the password to authenticate with
      *  @param  database    the database to use
      *  @param  flags       connection flags
+     *  @param  initialize  do we need to initialize (and cleanup) the mysql library
      */
-    Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, uint64_t flags = CLIENT_IGNORE_SIGPIPE | CLIENT_MULTI_STATEMENTS);
+    Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, uint64_t flags = CLIENT_IGNORE_SIGPIPE | CLIENT_MULTI_STATEMENTS, bool initialize = true);
 
     /**
      *  Destructor

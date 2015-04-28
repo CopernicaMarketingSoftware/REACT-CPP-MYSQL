@@ -5,6 +5,7 @@ C++ asynchronous mysql library on top of the REACT-CPP library. Uses lambdas and
 
 REACT-CPP-MYSQL is a MySQL library using REACT-CPP to manage an asynchronous connection to MySQL.
 
+
 Connection class
 ================
 

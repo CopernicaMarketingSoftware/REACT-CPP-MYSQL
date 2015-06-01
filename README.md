@@ -5,6 +5,20 @@ C++ asynchronous mysql library on top of the REACT-CPP library. Uses lambdas and
 
 REACT-CPP-MYSQL is a MySQL library using REACT-CPP to manage an asynchronous connection to MySQL.
 
+ABOUT
+=====
+
+REACT-CPP-MYSQL library is created and maintained by Copernica (www.copernica.com). 
+Do you appreciate our work and are you looking for other high quality solutions? 
+
+Then check out our other solutions:
+
+* PHP-CPP (www.php-cpp.com)
+* PHP-JS (www.php-js.com)
+* Copernica Marketing Suite (www.copernica.com)
+* MailerQ MTA (www.mailerq.com)
+* Responsive Email web service (www.responsiveemail.com)
+
 Connection class
 ================
 

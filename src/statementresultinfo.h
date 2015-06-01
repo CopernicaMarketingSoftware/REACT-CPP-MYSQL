@@ -202,6 +202,13 @@ public:
                     case MYSQL_TYPE_TIMESTAMP:
                         field = new StatementDateTimeResultField();
                         break;
+                    case MYSQL_TYPE_TIME2:
+                    case MYSQL_TYPE_DATETIME2:
+                    case MYSQL_TYPE_TIMESTAMP2:
+                        // mysql guarantees we don't see this on the client-side
+                        // so we simply ignore this to stop the compiler from
+                        // generating warnings about ignoring enum options
+                        break;
                     case MYSQL_TYPE_NULL:
                         // field is always null, no need to do anything
                         break;

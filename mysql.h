@@ -12,13 +12,13 @@
  *  Dependencies
  */
 #include <reactcpp.h>
-#include <variant.h>
 #include <mysql/mysql.h>
 #include <functional>
 #include <memory>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <vector>
 #include <numeric>
 
 /**

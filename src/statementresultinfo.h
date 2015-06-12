@@ -202,6 +202,7 @@ public:
                     case MYSQL_TYPE_TIMESTAMP:
                         field = new StatementDateTimeResultField();
                         break;
+#ifdef MYSQL_TYPE_TIME2
                     case MYSQL_TYPE_TIME2:
                     case MYSQL_TYPE_DATETIME2:
                     case MYSQL_TYPE_TIMESTAMP2:
@@ -209,6 +210,7 @@ public:
                         // so we simply ignore this to stop the compiler from
                         // generating warnings about ignoring enum options
                         break;
+#endif
                     case MYSQL_TYPE_NULL:
                         // field is always null, no need to do anything
                         break;

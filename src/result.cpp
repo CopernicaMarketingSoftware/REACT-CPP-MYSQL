@@ -17,32 +17,31 @@ namespace React { namespace MySQL {
  *  Constructor
  */
 Result::Result(MYSQL_RES *result) :
-    _result(std::make_shared<QueryResultImpl>(result)),
-    _affectedRows(0)
+    _result(std::make_shared<QueryResultImpl>(result))
 {}
 
 /**
  *  Constructor
  */
 Result::Result(std::shared_ptr<ResultImpl>&& implementation) :
-    _result(std::move(implementation)),
-    _affectedRows(0)
+    _result(std::move(implementation))
 {}
 
 /**
  *  Constructor for affected rows
+ *
+ *  @param  affectedRows    Number of rows affected
+ *  @param  insertID        ID for the inserted row, if applicable
  */
-Result::Result(size_t affectedRows) :
-    _result(nullptr),
-    _affectedRows(0)
+Result::Result(size_t affectedRows, uint64_t insertID) :
+    _affectedRows(affectedRows),
+    _insertID(insertID)
 {}
 
 /**
  *  Invalid constructor
  */
-Result::Result(std::nullptr_t result) :
-    _result(nullptr),
-    _affectedRows(0)
+Result::Result(std::nullptr_t result)
 {}
 
 /**
@@ -193,6 +192,15 @@ bool Result::valid() const
 size_t Result::affectedRows() const
 {
     return _affectedRows;
+}
+
+/**
+ *  ID of the last inserted row, but only
+ *  if the insert was using an auto_increment
+ */
+uint64_t Result::insertID() const
+{
+    return _insertID;
 }
 
 /**

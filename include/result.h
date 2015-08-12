@@ -27,7 +27,15 @@ class Result
     /**
      *  Number of affected rows
      */
-    size_t _affectedRows;
+    size_t _affectedRows = 0;
+
+    /**
+     *  Last insert id, only relevant
+     *  if this is the result of a query
+     *  that inserted into a table with
+     *  an auto_increment column
+     */
+    uint64_t _insertID = 0;
 
 public:
     /**
@@ -123,8 +131,11 @@ public:
 
     /**
      *  Constructor for affected rows
+     *
+     *  @param  affectedRows    Number of rows affected
+     *  @param  insertID        ID for the inserted row, if applicable
      */
-    Result(size_t affectedRows);
+    Result(size_t affectedRows, uint64_t insertID);
 
     /**
      *  Invalid constructor
@@ -155,6 +166,12 @@ public:
      *  The number of rows affected
      */
     size_t affectedRows() const;
+
+    /**
+     *  ID of the last inserted row, but only
+     *  if the insert was using an auto_increment
+     */
+    uint64_t insertID() const;
 
     /**
      *  Get the number of rows in this result

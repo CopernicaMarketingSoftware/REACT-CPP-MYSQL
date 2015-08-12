@@ -132,7 +132,7 @@ Deferred& Statement::execute(Parameter *parameters, size_t count)
         if (_info == nullptr) _connection->_master.execute([this, reference, deferred]() {
             // the statement already knows the number of affected rows
             // so doing this on the master will not block at all
-            deferred->success(Result(mysql_stmt_affected_rows(_statement)));
+            deferred->success(Result(mysql_stmt_affected_rows(_statement), mysql_stmt_insert_id(_statement)));
         });
         else
         {

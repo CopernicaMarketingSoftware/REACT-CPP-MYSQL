@@ -269,7 +269,7 @@ Deferred& Connection::query(const std::string& query)
                 else
                 {
                     // this is a query without a result set (i.e.: update, insert or delete)
-                    _master.execute([this, reference, deferred, affectedRows]() { deferred->success(Result(affectedRows)); });
+                    _master.execute([this, reference, deferred, affectedRows]() { deferred->success(Result(affectedRows, mysql_insert_id(_connection))); });
                 }
             }
 

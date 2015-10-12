@@ -113,6 +113,10 @@ void Connection::onConnected(const std::function<void(const char *error)>& callb
  */
 Statement *Connection::statement(const char *query)
 {
+    // @todo, don't use the reconnected boolean here but properly (non blocking preferably)
+    //        check if we reconnected. This would normally be done by calling mysql_thread_id()
+    //        followed by a mysql_ping(), followed by a mysql_thread_id() again and comparing the 2.
+    //        But as mysql_ping() is blocking this is not really an option.
     // are we reconnected?
     if (_reconnected)
     {

@@ -31,6 +31,7 @@ private:
      *  Field names to field index
      */
     std::map<std::string, size_t> _fields;
+
 public:
     /**
      *  Constructor

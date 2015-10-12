@@ -39,7 +39,7 @@ static void init()
 Connection::Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, uint64_t flags, bool initialize) :
     _loop(loop),
     _connection(nullptr),
-    _reconnected(false),
+    _reconnected(true),
     _master(loop),
     _worker()
 {

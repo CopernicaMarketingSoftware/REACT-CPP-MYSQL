@@ -48,7 +48,7 @@ private:
     /**
      *  Information about the query result fields
      */
-    StatementResultInfo *_info;
+    std::unique_ptr<StatementResultInfo> _info;
 
     /**
      *  Initialize the statement
@@ -89,18 +89,7 @@ public:
     /**
      *  Move constructor
      */
-    Statement(Statement&& that) :
-        _connection(that._connection),
-        _statement(that._statement),
-        _parameters(that._parameters),
-        _info(that._info)
-    {
-        // reset other statement
-        that._connection = nullptr;
-        that._statement = nullptr;
-        that._parameters = 0;
-        that._info = nullptr;
-    }
+    Statement(Statement&& that);
 
     /**
      *  Destructor

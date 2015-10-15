@@ -24,8 +24,7 @@ Statement::Statement(Connection *connection, std::string statement) :
     _connection(connection),
     _statement(nullptr),
     _query(std::move(statement)),
-    _parameters(0),
-    _info(nullptr)
+    _parameters(0)
 {
     // keep the loop alive while the callback runs
     auto reference = std::make_shared<React::LoopReference>(_connection->_loop);
@@ -35,15 +34,27 @@ Statement::Statement(Connection *connection, std::string statement) :
 }
 
 /**
+ *  Move constructor
+ */
+Statement::Statement(Statement&& that) :
+    _connection(that._connection),
+    _statement(that._statement),
+    _parameters(that._parameters),
+    _info(std::move(that._info))
+{
+    // reset other statement
+    that._connection = nullptr;
+    that._statement = nullptr;
+    that._parameters = 0;
+}
+
+/**
  *  Destructor
  */
 Statement::~Statement()
 {
     // clean up the statement
     if (_statement != nullptr) mysql_stmt_close(_statement);
-
-    // clean up the result information
-    delete _info;
 }
 
 /**
@@ -84,7 +95,7 @@ void Statement::initialize(const std::shared_ptr<React::LoopReference> &referenc
     auto *result = mysql_stmt_result_metadata(_statement);
 
     // if the statement does return fields, store information about it
-    if (result != nullptr) _info = new StatementResultInfo(_statement, result);
+    if (result != nullptr) _info.reset(new StatementResultInfo(_statement, result));
 
     // all is well, inform the callback
     _connection->_master.execute([this, reference] () { if (_prepareCallback) _prepareCallback(nullptr); });
@@ -142,7 +153,7 @@ void Statement::execute(Parameter *parameters, size_t count, const std::shared_p
             _parameters = 0;
 
             // clean up the info
-            delete _info; _info = nullptr;
+            _info.reset();
 
             // initialize the statement again
             initialize(reference);
@@ -172,7 +183,7 @@ void Statement::execute(Parameter *parameters, size_t count, const std::shared_p
     }
 
     // if the query has no result set, we create the result with the affected rows
-    if (_info == nullptr) _connection->_master.execute([this, reference, deferred]() {
+    if (!_info) _connection->_master.execute([this, reference, deferred]() {
         // the statement already knows the number of affected rows
         // so doing this on the master will not block at all
         deferred->success(Result(mysql_stmt_affected_rows(_statement), mysql_stmt_insert_id(_statement)));

@@ -7,6 +7,7 @@
  */
 
 #include "includes.h"
+#include "mysql/errmsg.h"
 
 /**
  *  Set up namespace
@@ -29,41 +30,8 @@ Statement::Statement(Connection *connection, std::string statement) :
     // keep the loop alive while the callback runs
     auto reference = std::make_shared<React::LoopReference>(_connection->_loop);
 
-    // prepare statement in worker thread
-    _connection->_worker.execute([this, reference]() {
-        // initialize statement
-        if ((_statement = mysql_stmt_init(_connection->_connection)) == nullptr)
-        {
-            _connection->_master.execute([this, reference]() { if (_prepareCallback) _prepareCallback("Unable to initialize statement"); });
-            return;
-        }
-
-        // prepare statement
-        if (mysql_stmt_prepare(_statement, _query.c_str(), _query.size()))
-        {
-            _connection->_master.execute([this, reference]() {
-                // inform callback of problem
-                if (_prepareCallback) _prepareCallback(mysql_stmt_error(_statement));
-
-                // clean up the statement
-                mysql_stmt_close(_statement);
-                _statement = nullptr;
-            });
-            return;
-        }
-
-        // store number of parameters in statement
-        _parameters = mysql_stmt_param_count(_statement);
-
-        // retrieve the list of fields for the statement result set (if any)
-        auto *result = mysql_stmt_result_metadata(_statement);
-
-        // if the statement does return fields, store information about it
-        if (result != nullptr) _info = new StatementResultInfo(_statement, result);
-
-        // all is well, inform the callback
-        _connection->_master.execute([this, reference] () { if (_prepareCallback) _prepareCallback(nullptr); });
-    });
+    // initialize statement in worker thread
+    _connection->_worker.execute([this, reference]() { initialize(reference); });
 }
 
 /**
@@ -79,83 +47,144 @@ Statement::~Statement()
 }
 
 /**
+ *  Initialize the statement
+ *
+ *  @note:  This function is to be executed from
+ *          worker context only
+ *
+ *  @param  reference   The loop reference to stay alive
+ */
+void Statement::initialize(const std::shared_ptr<React::LoopReference> &reference)
+{
+    // initialize statement
+    if ((_statement = mysql_stmt_init(_connection->_connection)) == nullptr)
+    {
+        _connection->_master.execute([this, reference]() { if (_prepareCallback) _prepareCallback("Unable to initialize statement"); });
+        return;
+    }
+
+    // prepare statement
+    if (mysql_stmt_prepare(_statement, _query.c_str(), _query.size()))
+    {
+        _connection->_master.execute([this, reference]() {
+            // inform callback of problem
+            if (_prepareCallback) _prepareCallback(mysql_stmt_error(_statement));
+
+            // clean up the statement
+            mysql_stmt_close(_statement);
+            _statement = nullptr;
+        });
+        return;
+    }
+
+    // store number of parameters in statement
+    _parameters = mysql_stmt_param_count(_statement);
+
+    // retrieve the list of fields for the statement result set (if any)
+    auto *result = mysql_stmt_result_metadata(_statement);
+
+    // if the statement does return fields, store information about it
+    if (result != nullptr) _info = new StatementResultInfo(_statement, result);
+
+    // all is well, inform the callback
+    _connection->_master.execute([this, reference] () { if (_prepareCallback) _prepareCallback(nullptr); });
+}
+
+/**
  *  Execute statement with given parameters
  *
- *  @param  parameters  input parameters
- *  @param  count       number of parameters
+ *  @note:  This function is to be executed from
+ *          worker context only
+ *
+ *  @param  parameters  The parameters to retry with
+ *  @param  count       The number of parameters
+ *  @param  reference   The loop reference
+ *  @param  deferred    The previously created deferred handler
  */
-Deferred& Statement::execute(Parameter *parameters, size_t count)
+void Statement::execute(Parameter *parameters, size_t count, const std::shared_ptr<React::LoopReference> &reference, const std::shared_ptr<Deferred> &deferred)
 {
-    // create the deferred handler
-    auto deferred = std::make_shared<Deferred>();
-
-    // keep the loop alive while the callback runs
-    auto reference = std::make_shared<React::LoopReference>(_connection->_loop);
-
-    // execute statement in worker thread
-    _connection->_worker.execute([this, reference, parameters, count, deferred]() {
-        // check for a valid statement
-        if (_statement == nullptr)
-        {
-            _connection->_master.execute([reference, deferred]() { deferred->failure("Cannot execute invalid statement"); });
-            delete [] parameters;
-            return;
-        }
-
-        // check for correct number of arguments and bind the parameters
-        if (count != _parameters)
-        {
-            _connection->_master.execute([reference, deferred]() { deferred->failure("Incorrect number of arguments"); });
-            delete [] parameters;
-            return;
-        }
-
-        // bind the parameters
-        if (mysql_stmt_bind_param(_statement, parameters))
-        {
-            _connection->_master.execute([this, reference, deferred]() { deferred->failure(mysql_stmt_error(_statement)); });
-            delete [] parameters;
-            return;
-        }
-
-        // execute the statement
-        if (mysql_stmt_execute(_statement))
-        {
-            // retry here, the statement was reset after all...
-
-            _connection->_master.execute([this, reference, deferred]() { deferred->failure(mysql_stmt_error(_statement)); });
-            delete [] parameters;
-            return;
-        }
-
-        // clean up input parameters
+    // check for a valid statement
+    if (_statement == nullptr)
+    {
+        _connection->_master.execute([reference, deferred]() { deferred->failure("Cannot execute invalid statement"); });
         delete [] parameters;
+        return;
+    }
 
-        // anyone interested in the result?
-        if (!deferred->requireStatus())
+    // check for correct number of arguments and bind the parameters
+    if (count != _parameters)
+    {
+        _connection->_master.execute([reference, deferred]() { deferred->failure("Incorrect number of arguments"); });
+        delete [] parameters;
+        return;
+    }
+
+    // bind the parameters
+    if (mysql_stmt_bind_param(_statement, parameters))
+    {
+        _connection->_master.execute([this, reference, deferred]() { deferred->failure(mysql_stmt_error(_statement)); });
+        delete [] parameters;
+        return;
+    }
+
+    // execute the statement
+    if (mysql_stmt_execute(_statement))
+    {
+        // check if the connection was reset, in which case we will
+        // have to completely re-initialize the statement :(
+        if (mysql_stmt_errno(_statement) == CR_SERVER_LOST)
         {
-            deferred->complete();
-            return;
-        }
+            // the statement is now invalid
+            // the client code cleans it up
+            _statement = nullptr;
 
-        // if the query has no result set, we create the result with the affected rows
-        if (_info == nullptr) _connection->_master.execute([this, reference, deferred]() {
-            // the statement already knows the number of affected rows
-            // so doing this on the master will not block at all
-            deferred->success(Result(mysql_stmt_affected_rows(_statement), mysql_stmt_insert_id(_statement)));
-        });
+            // reset parameter count
+            _parameters = 0;
+
+            // clean up the info
+            delete _info; _info = nullptr;
+
+            // initialize the statement again
+            initialize(reference);
+
+            // and retry execution again
+            execute(parameters, count, reference, deferred);
+        }
         else
         {
-            // retrieve the result
-            auto rows = _info->rows();
-
-            // send the result to the callback
-           _connection->_master.execute([reference, deferred, rows]() { deferred->success(Result(std::move(rows))); });
+            // an error occured that we can't recover from
+            _connection->_master.execute([this, reference, deferred]() { deferred->failure(mysql_stmt_error(_statement)); });
+            delete [] parameters;
         }
-    });
 
-    // return the deferred handler
-    return *deferred;
+        // an error occured, don't proceed
+        return;
+    }
+
+    // clean up input parameters
+    delete [] parameters;
+
+    // anyone interested in the result?
+    if (!deferred->requireStatus())
+    {
+        deferred->complete();
+        return;
+    }
+
+    // if the query has no result set, we create the result with the affected rows
+    if (_info == nullptr) _connection->_master.execute([this, reference, deferred]() {
+        // the statement already knows the number of affected rows
+        // so doing this on the master will not block at all
+        deferred->success(Result(mysql_stmt_affected_rows(_statement), mysql_stmt_insert_id(_statement)));
+    });
+    else
+    {
+        // retrieve the result
+        auto rows = _info->rows();
+
+        // send the result to the callback
+       _connection->_master.execute([reference, deferred, rows]() { deferred->success(Result(std::move(rows))); });
+    }
 }
 
 /**

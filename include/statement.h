@@ -51,12 +51,27 @@ private:
     StatementResultInfo *_info;
 
     /**
+     *  Initialize the statement
+     *
+     *  @note:  This function is to be executed from
+     *          worker context only
+     *
+     *  @param  reference   The loop reference to stay alive
+     */
+    void initialize(const std::shared_ptr<React::LoopReference> &reference);
+
+    /**
      *  Execute statement with given parameters
      *
-     *  @param  parameters  input parameters
-     *  @param  count       number of parameters
+     *  @note:  This function is to be executed from
+     *          worker context only
+     *
+     *  @param  parameters  The parameters to retry with
+     *  @param  count       The number of parameters
+     *  @param  reference   The loop reference
+     *  @param  deferred    The previously created deferred handler
      */
-    Deferred& execute(Parameter *parameters, size_t count);
+    void execute(Parameter *parameters, size_t count, const std::shared_ptr<React::LoopReference> &reference, const std::shared_ptr<Deferred> &deferred);
 public:
     /**
      *  Constructor
@@ -128,10 +143,23 @@ public:
      *  @param  callback    the callback to be informed when the statement is executed or failed
      */
     template <class ...Arguments>
-    Deferred& execute(Arguments ...parameters)
+    Deferred& execute(Arguments ...params)
     {
-        // pass to implementation
-        return execute(new Parameter[sizeof...(parameters)]{ parameters... }, sizeof...(parameters));
+        // create the deferred handler
+        auto deferred = std::make_shared<Deferred>();
+
+        // keep the loop alive while the callback runs
+        auto reference = std::make_shared<React::LoopReference>(_connection->_loop);
+
+        // allocate the parameters
+        auto count = sizeof...(params);
+        auto *parameters = new Parameter[sizeof...(params)]{ params... };
+
+        // execute statement in worker thread
+        _connection->_worker.execute([this, reference, parameters, count, deferred]() { execute(parameters, count, reference, deferred); });
+
+        // return the deferred handler
+        return *deferred;
     }
 };
 

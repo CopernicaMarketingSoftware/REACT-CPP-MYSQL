@@ -7,6 +7,11 @@
  */
 
 /**
+ *  Dependencies
+ */
+#include <unordered_map>
+
+/**
  *  Set up namespace
  */
 namespace React { namespace MySQL {
@@ -36,14 +41,9 @@ private:
     std::function<void(const char *error)> _connectCallback;
 
     /**
-     *  Did we encounter a reconnect?
-     */
-    my_bool _reconnected;
-
-    /**
      *  Cached prepared statements
      */
-    std::map<const char *, Statement*> _statements;
+    std::unordered_map<const char *, std::unique_ptr<Statement>> _statements;
 
     /**
      *  Worker for main thread

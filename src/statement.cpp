@@ -18,11 +18,11 @@ namespace React { namespace MySQL {
  *
  *  @param  connection  the connection to run the statement on
  *  @param  statement   the statement to execute
- *  @param  callback    the callback to inform of success or failure
  */
-Statement::Statement(Connection *connection, const std::string& statement) :
+Statement::Statement(Connection *connection, std::string statement) :
     _connection(connection),
     _statement(nullptr),
+    _query(std::move(statement)),
     _parameters(0),
     _info(nullptr)
 {
@@ -30,7 +30,7 @@ Statement::Statement(Connection *connection, const std::string& statement) :
     auto reference = std::make_shared<React::LoopReference>(_connection->_loop);
 
     // prepare statement in worker thread
-    _connection->_worker.execute([this, reference, statement]() {
+    _connection->_worker.execute([this, reference]() {
         // initialize statement
         if ((_statement = mysql_stmt_init(_connection->_connection)) == nullptr)
         {
@@ -39,7 +39,7 @@ Statement::Statement(Connection *connection, const std::string& statement) :
         }
 
         // prepare statement
-        if (mysql_stmt_prepare(_statement, statement.c_str(), statement.size()))
+        if (mysql_stmt_prepare(_statement, _query.c_str(), _query.size()))
         {
             _connection->_master.execute([this, reference]() {
                 // inform callback of problem
@@ -110,9 +110,19 @@ Deferred& Statement::execute(Parameter *parameters, size_t count)
             return;
         }
 
-        // bind the parameters and execute the statement
-        if (mysql_stmt_bind_param(_statement, parameters) || mysql_stmt_execute(_statement))
+        // bind the parameters
+        if (mysql_stmt_bind_param(_statement, parameters))
         {
+            _connection->_master.execute([this, reference, deferred]() { deferred->failure(mysql_stmt_error(_statement)); });
+            delete [] parameters;
+            return;
+        }
+
+        // execute the statement
+        if (mysql_stmt_execute(_statement))
+        {
+            // retry here, the statement was reset after all...
+
             _connection->_master.execute([this, reference, deferred]() { deferred->failure(mysql_stmt_error(_statement)); });
             delete [] parameters;
             return;

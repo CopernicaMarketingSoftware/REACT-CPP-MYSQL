@@ -31,6 +31,11 @@ private:
     MYSQL_STMT *_statement;
 
     /**
+     *  The query the statement is based on
+     */
+    std::string _query;
+
+    /**
      *  Callback to execute when the statement was prepared
      */
     std::function<void(const char *error)> _prepareCallback;
@@ -59,7 +64,7 @@ public:
      *  @param  connection  the connection to run the statement on
      *  @param  statement   the statement to execute
      */
-    Statement(Connection *connection, const std::string& statement);
+    Statement(Connection *connection, std::string statement);
 
     /**
      *  Copy constructor

@@ -39,7 +39,6 @@ static void init()
 Connection::Connection(Loop *loop, const std::string& hostname, const std::string &username, const std::string& password, const std::string& database, uint64_t flags, bool initialize) :
     _loop(loop),
     _connection(nullptr),
-    _reconnected(false),
     _master(loop),
     _worker()
 {
@@ -59,8 +58,9 @@ Connection::Connection(Loop *loop, const std::string& hostname, const std::strin
             return;
         }
 
-        // let us know when we are reconnected
-        mysql_options(_connection, MYSQL_OPT_RECONNECT, &_reconnected);
+        // enable automatic reconnect
+        my_bool reconnect = 1;
+        mysql_options(_connection, MYSQL_OPT_RECONNECT, &reconnect);
 
         // connect to mysql
         if (mysql_real_connect(_connection, hostname.c_str(), username.c_str(), password.c_str(), database.c_str(), 0, nullptr, flags) == nullptr)
@@ -82,11 +82,6 @@ Connection::~Connection()
 {
     // clean up mysql data when the worker stops
     _worker.execute([this]() {
-        // this would be nice with a unique_ptr, but
-        // that cannot be easily done due to circular
-        // dependencies, so we do this by hand.
-        for (auto &statement : _statements) delete statement.second;
-
         // close a possible connection
         if (_connection) mysql_close(_connection);
 
@@ -113,26 +108,15 @@ void Connection::onConnected(const std::function<void(const char *error)>& callb
  */
 Statement *Connection::statement(const char *query)
 {
-    // are we reconnected?
-    if (_reconnected)
-    {
-        // delete all statements
-        for (auto &statement : _statements) delete statement.second;
-        _statements.clear();
-
-        // clear reconnect flag
-        _reconnected = false;
-    }
-
     // find a possibly existing statement
     auto iter = _statements.find(query);
 
     // do we already have this statement?
-    if (iter != _statements.end()) return iter->second;
+    if (iter != _statements.end()) return iter->second.get();
 
     // create a new statement and store it
     auto *statement = new Statement(this, query);
-    _statements[query] = statement;
+    _statements[query].reset(statement);
 
     // return the newfangled statement
     return statement;
